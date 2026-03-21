@@ -288,6 +288,8 @@ export class Level1Scene extends Phaser.Scene {
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Entering the Whispering Woods...", 0x44ff44);
     this.time.delayedCall(1000, () => {
+      this.sound.stopAll();
+      this.sound.play('level2music', { loop: true, volume: 0.4 });
       this.scene.stop('UIScene');
       this.scene.start('Level2Scene', { playerState: this.playerState });
     });

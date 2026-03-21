@@ -141,8 +141,21 @@ export class UIScene extends Phaser.Scene {
       strokeThickness: 3
     }).setOrigin(0.5, 0).setAlpha(0.7);
 
+    // Music volume control
+    this.musicVolume = 0.4;
+    this.volumeText = this.add.text(1024 - padding, 576 - 34, 'M/N: Vol 40%', {
+      fontSize: '11px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#AAAAAA',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(1, 1).setAlpha(0.6);
+
+    this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.keyN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
+
     // Controls reminder
-    this.add.text(1024 - padding, 576 - 16, 'ARROWS: Move | SHIFT: Run | SPACE: Jump | X: Pounce | E: Talk | TAB: Switch | V: Night Vision', {
+    this.add.text(1024 - padding, 576 - 16, 'ARROWS: Move | SHIFT: Run | SPACE: Jump | X: Pounce | E: Talk | TAB: Switch | V: Night Vision | M/N: Volume', {
       fontSize: '9px',
       fontFamily: 'Arial, sans-serif',
       color: '#FFFFFF',
@@ -260,6 +273,20 @@ export class UIScene extends Phaser.Scene {
       this.interactHint.setAlpha(1);
     } else {
       this.interactHint.setAlpha(0);
+    }
+
+    // Volume down (M)
+    if (Phaser.Input.Keyboard.JustDown(this.keyM)) {
+      this.musicVolume = Math.max(0, this.musicVolume - 0.1);
+      this.sound.setVolume(this.musicVolume);
+      this.volumeText.setText(`M/N: Vol ${Math.round(this.musicVolume * 100)}%`);
+    }
+
+    // Volume up (N)
+    if (Phaser.Input.Keyboard.JustDown(this.keyN)) {
+      this.musicVolume = Math.min(1, this.musicVolume + 0.1);
+      this.sound.setVolume(this.musicVolume);
+      this.volumeText.setText(`M/N: Vol ${Math.round(this.musicVolume * 100)}%`);
     }
   }
 }

@@ -7,7 +7,8 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     // Load music
-    this.load.audio('bgm', 'music/Pixel Paws 2026.mp3');
+    this.load.audio('level1music', 'music/level1music.mp3');
+    this.load.audio('level2music', 'music/level2music.mp3');
   }
 
   create() {
@@ -15,7 +16,7 @@ export class BootScene extends Phaser.Scene {
     this.createPlaceholderTextures();
 
     // Start music (looping)
-    this.sound.play('bgm', { loop: true, volume: 0.4 });
+    this.sound.play('level1music', { loop: true, volume: 0.4 });
 
     this.scene.start('TitleScene');
   }
