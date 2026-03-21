@@ -77,11 +77,12 @@ export class Level1Scene extends Phaser.Scene {
     // ---- Player (Whiskers) ----
     this.player = this.physics.add.sprite(100, worldHeight - 120, 'cat_whiskers_f0');
     this.player.setCollideWorldBounds(true);
-    this.player.setBounce(0.1);
+    this.player.setBounce(0);
     this.player.setScale(1.5);
-    this.player.body.setSize(24, 28);
-    this.player.body.setOffset(12, 10);
+    this.player.body.setSize(20, 22);
+    this.player.body.setOffset(14, 14);
     this.player.setDepth(10);
+    this.player.setFlipX(true); // Cat is drawn facing left, flip to face right at start
 
     // Player state
     this.playerState = {
@@ -214,7 +215,6 @@ export class Level1Scene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
     this.physics.add.collider(this.enemies, this.platforms);
-    this.physics.add.collider(this.enemies, this.crates);
 
     // Collectible overlaps
     this.physics.add.overlap(this.player, this.tunas, this.collectTuna, null, this);
@@ -391,14 +391,14 @@ export class Level1Scene extends Phaser.Scene {
     const onGround = this.player.body.blocked.down;
     const speed = this.playerState.isRunning ? this.playerState.speed * 1.6 : this.playerState.speed;
 
-    // Movement
+    // Movement (cat is drawn facing left, so flipX=false=left, flipX=true=right)
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-speed);
-      this.player.setFlipX(true);
+      this.player.setFlipX(false);
       this.playerState.facingRight = false;
     } else if (this.cursors.right.isDown) {
       this.player.setVelocityX(speed);
-      this.player.setFlipX(false);
+      this.player.setFlipX(true);
       this.playerState.facingRight = true;
     } else {
       this.player.setVelocityX(0);
@@ -410,15 +410,12 @@ export class Level1Scene extends Phaser.Scene {
     // Animations
     const moving = this.cursors.left.isDown || this.cursors.right.isDown;
     if (!onGround) {
-      // Airborne — hold a walk frame
       this.player.anims.stop();
-      this.player.setTexture('cat_whiskers_f1');
     } else if (moving) {
       const walkAnim = 'whiskers_walk';
       if (this.player.anims.currentAnim?.key !== walkAnim) {
         this.player.play(walkAnim);
       }
-      // Speed up animation when running
       if (this.playerState.isRunning) {
         this.player.anims.msPerFrame = 80;
       } else {
@@ -429,7 +426,7 @@ export class Level1Scene extends Phaser.Scene {
     }
 
     // Jump
-    if (this.cursors.space.isDown && onGround) {
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && onGround) {
       this.player.setVelocityY(this.playerState.jumpPower);
     }
 
@@ -490,16 +487,13 @@ export class Level1Scene extends Phaser.Scene {
       onComplete: () => effect.destroy()
     });
 
-    // Slight lunge
-    const lungeVel = this.playerState.facingRight ? 200 : -200;
-    this.player.setVelocityX(lungeVel);
-    this.player.setVelocityY(-150);
-
     // Check for crate hits
+    let hitCrate = false;
     this.crates.children.each(crate => {
       if (!crate.active) return;
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, crate.x, crate.y);
       if (dist < 60) {
+        hitCrate = true;
         const hp = crate.getData('health') - 1;
         crate.setData('health', hp);
         crate.setTint(0xff6666);
@@ -512,6 +506,17 @@ export class Level1Scene extends Phaser.Scene {
         }
       }
     });
+
+    // Bounce back if hit a crate, otherwise lunge forward
+    if (hitCrate) {
+      const knockback = this.playerState.facingRight ? -150 : 150;
+      this.player.setVelocityX(knockback);
+      this.player.setVelocityY(-200);
+    } else {
+      const lungeVel = this.playerState.facingRight ? 200 : -200;
+      this.player.setVelocityX(lungeVel);
+      this.player.setVelocityY(-100);
+    }
 
     // Scare nearby enemies
     this.enemies.children.each(enemy => {
@@ -614,28 +619,30 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   collectTuna(player, tuna) {
+    const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
     this.playerState.hunger = Math.min(100, this.playerState.hunger + 25);
     this.playerState.tunasCollected++;
     this.showQuickMessage("+25 Hunger!", 0x4a90d9);
-    this.collectEffect(tuna.x, tuna.y, 0x4a90d9);
+    this.collectEffect(tx, ty, 0x4a90d9);
   }
 
   collectWater(player, water) {
+    const wx = water.x, wy = water.y;
     water.destroy();
     this.playerState.thirst = Math.min(100, this.playerState.thirst + 30);
     this.playerState.watersCollected++;
     this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
-    this.collectEffect(water.x, water.y, 0x4fc3f7);
+    this.collectEffect(wx, wy, 0x4fc3f7);
   }
 
   collectMapPiece(player, piece) {
+    const px = piece.x, py = piece.y;
     piece.destroy();
     this.playerState.mapPieces++;
     this.showQuickMessage("MAP PIECE FOUND! (1/7)", 0xffd700);
-    this.collectEffect(piece.x, piece.y, 0xffd700);
+    this.collectEffect(px, py, 0xffd700);
 
-    // Big celebration
     this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
     this.time.delayedCall(1000, () => {
       this.showDialog([
@@ -646,10 +653,11 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   collectPendant(player, pendant) {
+    const px = pendant.x, py = pendant.y;
     pendant.destroy();
     this.playerState.accessories.push('fish_pendant');
     this.showQuickMessage("FISH PENDANT acquired! -25% food drain!", 0xffd700);
-    this.collectEffect(pendant.x, pendant.y, 0xffd700);
+    this.collectEffect(px, py, 0xffd700);
     this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
   }
 
@@ -657,8 +665,9 @@ export class Level1Scene extends Phaser.Scene {
     for (let i = 0; i < 6; i++) {
       const spark = this.add.graphics();
       spark.fillStyle(color);
-      spark.fillStar(0, 0, 6, 3, 1, 4);
+      spark.fillCircle(0, 0, 4);
       spark.setPosition(x, y);
+      spark.setDepth(20);
       this.tweens.add({
         targets: spark,
         x: x + Phaser.Math.Between(-40, 40),

@@ -155,11 +155,12 @@ export class Level2Scene extends Phaser.Scene {
     const charTexture = this.playerState.activeChar === 'luna' ? 'cat_luna_f0' : 'cat_whiskers_f0';
     this.player = this.physics.add.sprite(80, worldHeight - 120, charTexture);
     this.player.setCollideWorldBounds(true);
-    this.player.setBounce(0.1);
+    this.player.setBounce(0);
     this.player.setScale(1.5);
-    this.player.body.setSize(24, 28);
-    this.player.body.setOffset(12, 10);
+    this.player.body.setSize(20, 22);
+    this.player.body.setOffset(14, 14);
     this.player.setDepth(10);
+    this.player.setFlipX(true); // Cat is drawn facing left, flip to face right at start
 
     // ---- Collectibles ----
     this.tunas = this.physics.add.group();
@@ -322,7 +323,14 @@ export class Level2Scene extends Phaser.Scene {
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
-    this.physics.add.collider(this.player, this.boulders);
+    this.physics.add.collider(this.player, this.boulders, (player, boulder) => {
+      // Push player away from boulder on contact
+      if (player.x < boulder.x) {
+        player.setVelocityX(-100);
+      } else {
+        player.setVelocityX(100);
+      }
+    });
     this.physics.add.collider(this.player, this.hiddenPaths);
     this.physics.add.collider(this.enemies, this.platforms);
 
@@ -555,15 +563,13 @@ export class Level2Scene extends Phaser.Scene {
     };
     this.player.setTexture(sheetMap[this.playerState.activeChar]);
 
-    // Character-specific tint/effects
-    if (this.playerState.activeChar === 'luna') {
-      // Luna's eyes glow slightly
-      this.player.setTint(0xddddff);
-      this.time.delayedCall(200, () => this.player.clearTint());
-    }
+    // Re-apply physics body size after texture swap (setTexture resets it)
+    this.player.body.setSize(20, 22);
+    this.player.body.setOffset(14, 14);
 
-    // Flash effect on switch
-    this.cameras.main.flash(200, 150, 150, 255, false, 0.3);
+    // Brief flash effect on switch
+    this.player.setTint(0xaa88ff);
+    this.time.delayedCall(200, () => this.player.clearTint());
 
     const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna' };
     this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
@@ -583,13 +589,9 @@ export class Level2Scene extends Phaser.Scene {
 
     if (this.nightVisionActive) {
       this.showQuickMessage("Night Vision ON!", 0x44ff44);
-      // Green tint on camera
-      this.cameras.main.setTint(0xaaffaa);
+      // Brief green flash on player only (no camera tint — that covers the whole screen)
       this.player.setTint(0x44ff44);
-      this.time.delayedCall(300, () => {
-        this.cameras.main.clearTint();
-        this.player.clearTint();
-      });
+      this.time.delayedCall(300, () => this.player.clearTint());
     } else {
       this.showQuickMessage("Night Vision OFF", 0xff8844);
     }
@@ -753,14 +755,14 @@ export class Level2Scene extends Phaser.Scene {
     const isLuna = this.playerState.activeChar === 'luna';
     const speed = this.playerState.isRunning ? this.playerState.speed * 1.6 : this.playerState.speed;
 
-    // Movement
+    // Movement (cat is drawn facing left, so flipX=false=left, flipX=true=right)
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-speed);
-      this.player.setFlipX(true);
+      this.player.setFlipX(false);
       this.playerState.facingRight = false;
     } else if (this.cursors.right.isDown) {
       this.player.setVelocityX(speed);
-      this.player.setFlipX(false);
+      this.player.setFlipX(true);
       this.playerState.facingRight = true;
     } else {
       this.player.setVelocityX(0);
@@ -773,7 +775,6 @@ export class Level2Scene extends Phaser.Scene {
     const animPrefix = isLuna ? 'luna' : 'whiskers';
     if (!onGround) {
       this.player.anims.stop();
-      this.player.setTexture(`cat_${animPrefix}_f1`);
     } else if (moving) {
       const walkAnim = `${animPrefix}_walk`;
       if (this.player.anims.currentAnim?.key !== walkAnim) {
@@ -785,7 +786,7 @@ export class Level2Scene extends Phaser.Scene {
     }
 
     // Jump
-    if (this.cursors.space.isDown && onGround) {
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && onGround) {
       this.player.setVelocityY(this.playerState.jumpPower);
     }
 
@@ -884,16 +885,14 @@ export class Level2Scene extends Phaser.Scene {
       onComplete: () => effect.destroy()
     });
 
-    const lungeVel = this.playerState.facingRight ? 200 : -200;
-    this.player.setVelocityX(lungeVel);
-    this.player.setVelocityY(-150);
-
     // Check boulders
+    let hitSolid = false;
     this.boulders.children.each(boulder => {
       if (!boulder.active) return;
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, boulder.x, boulder.y);
       if (dist < 70) {
         this.hitBoulder(boulder);
+        hitSolid = true;
       }
     });
 
@@ -902,6 +901,7 @@ export class Level2Scene extends Phaser.Scene {
       if (!crate.active) return;
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, crate.x, crate.y);
       if (dist < 60) {
+        hitSolid = true;
         const hp = crate.getData('health') - 1;
         crate.setData('health', hp);
         crate.setTint(0xff6666);
@@ -909,6 +909,17 @@ export class Level2Scene extends Phaser.Scene {
         if (hp <= 0) this.breakCrate(crate);
       }
     });
+
+    // Bounce back if hit something solid, otherwise lunge forward
+    if (hitSolid) {
+      const knockback = this.playerState.facingRight ? -150 : 150;
+      this.player.setVelocityX(knockback);
+      this.player.setVelocityY(-200);
+    } else {
+      const lungeVel = this.playerState.facingRight ? 200 : -200;
+      this.player.setVelocityX(lungeVel);
+      this.player.setVelocityY(-100);
+    }
 
     // Scare enemies
     this.enemies.children.each(enemy => {
@@ -999,28 +1010,31 @@ export class Level2Scene extends Phaser.Scene {
   }
 
   collectTuna(player, tuna) {
+    const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
     this.playerState.hunger = Math.min(100, this.playerState.hunger + 25);
     this.playerState.tunasCollected++;
     this.showQuickMessage("+25 Hunger!", 0x4a90d9);
-    this.collectEffect(tuna.x, tuna.y, 0x4a90d9);
+    this.collectEffect(tx, ty, 0x4a90d9);
   }
 
   collectWater(player, water) {
+    const wx = water.x, wy = water.y;
     water.destroy();
     this.playerState.thirst = Math.min(100, this.playerState.thirst + 30);
     this.playerState.watersCollected++;
     this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
-    this.collectEffect(water.x, water.y, 0x4fc3f7);
+    this.collectEffect(wx, wy, 0x4fc3f7);
   }
 
   collectMapPiece(player, piece) {
     if (piece.getData('hidden') && !this.nightVisionActive) return;
 
+    const px = piece.x, py = piece.y;
     piece.destroy();
     this.playerState.mapPieces++;
     this.showQuickMessage("MAP PIECE FOUND! (2/7)", 0xffd700);
-    this.collectEffect(piece.x, piece.y, 0xffd700);
+    this.collectEffect(px, py, 0xffd700);
     this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
 
     this.time.delayedCall(1000, () => {
@@ -1036,8 +1050,9 @@ export class Level2Scene extends Phaser.Scene {
     for (let i = 0; i < 6; i++) {
       const spark = this.add.graphics();
       spark.fillStyle(color);
-      spark.fillStar(0, 0, 6, 3, 1, 4);
+      spark.fillCircle(0, 0, 4);
       spark.setPosition(x, y);
+      spark.setDepth(20);
       this.tweens.add({
         targets: spark,
         x: x + Phaser.Math.Between(-40, 40),
