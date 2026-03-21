@@ -40,6 +40,10 @@ export class Level3Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 3 music
+    this.sound.stopAll();
+    this.sound.play('level3music', { loop: true, volume: 0.4 });
+
     // ---- Coastal dock background ----
     this.createDockBackground(worldWidth, worldHeight);
 
@@ -1052,8 +1056,9 @@ export class Level3Scene extends Phaser.Scene {
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to Catnip Canyon...", 0x44ff44);
     this.time.delayedCall(1000, () => {
-      this.scene.stop('UIScene');
       this.sound.stopAll();
+      this.sound.play('level4music', { loop: true, volume: 0.4 });
+      this.scene.stop('UIScene');
       this.scene.start('Level4Scene', { playerState: this.playerState });
     });
   }

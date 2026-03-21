@@ -39,6 +39,10 @@ export class Level6Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 6 music
+    this.sound.stopAll();
+    this.sound.play('level6music', { loop: true, volume: 0.4 });
+
     // ---- Snowy mountain background ----
     this.createSnowBackground(worldWidth, worldHeight);
 

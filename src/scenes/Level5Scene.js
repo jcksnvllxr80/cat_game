@@ -39,6 +39,10 @@ export class Level5Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 5 music
+    this.sound.stopAll();
+    this.sound.play('level5music', { loop: true, volume: 0.4 });
+
     // ---- Factory background ----
     this.createFactoryBackground(worldWidth, worldHeight);
 
@@ -1150,7 +1154,7 @@ export class Level5Scene extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       this.scene.stop('UIScene');
       this.sound.stopAll();
-      this.sound.play('level5music', { loop: true, volume: 0.4 });
+      this.sound.play('level6music', { loop: true, volume: 0.4 });
       this.scene.start('Level6Scene', { playerState: this.playerState });
     });
   }

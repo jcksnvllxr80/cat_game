@@ -6,6 +6,10 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create() {
+    // Start main menu music
+    this.sound.stopAll();
+    this.sound.play('mainmenumusic', { loop: true, volume: 0.4 });
+
     const { width, height } = this.scale;
 
     // Gradient sky background

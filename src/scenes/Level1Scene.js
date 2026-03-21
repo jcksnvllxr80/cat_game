@@ -13,6 +13,10 @@ export class Level1Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 1 music
+    this.sound.stopAll();
+    this.sound.play('level1music', { loop: true, volume: 0.4 });
+
     // ---- Parallax backgrounds ----
     this.createParallaxBackground(worldWidth, worldHeight);
 
@@ -102,6 +106,7 @@ export class Level1Scene extends Phaser.Scene {
       speed: 200,
       jumpPower: -400,
       isExhausted: false, // true when hunger or thirst hits 0
+      lives: 9,
     };
 
     // ---- Collectibles ----

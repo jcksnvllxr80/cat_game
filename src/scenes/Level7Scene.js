@@ -41,6 +41,10 @@ export class Level7Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 7 music
+    this.sound.stopAll();
+    this.sound.play('level7music', { loop: true, volume: 0.4 });
+
     // ---- Fortress background ----
     this.createFortressBackground(worldWidth, worldHeight);
 
@@ -745,6 +749,10 @@ export class Level7Scene extends Phaser.Scene {
     this.cameras.main.fadeOut(2000, 0, 0, 0);
 
     this.time.delayedCall(2500, () => {
+      // Play victory music
+      this.sound.stopAll();
+      this.sound.play('victory', { loop: false, volume: 0.5 });
+
       // Show THE END text
       const endBg = this.add.graphics();
       endBg.fillStyle(0x000000, 1);

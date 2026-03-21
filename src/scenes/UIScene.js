@@ -16,7 +16,9 @@ export class UIScene extends Phaser.Scene {
     // HUD Background panel
     this.hudBg = this.add.graphics();
     this.hudBg.fillStyle(0x000000, 0.5);
-    this.hudBg.fillRoundedRect(8, 8, 260, 120, 8);
+    this.hudBg.fillRoundedRect(8, 8, 260, 140, 8);
+
+    this.gameOverTriggered = false;
 
     // Hunger bar
     this.add.text(padding, 16, '🐟 Hunger', {
@@ -83,6 +85,14 @@ export class UIScene extends Phaser.Scene {
       fontSize: '11px',
       fontFamily: 'Arial, sans-serif',
       color: '#888888'
+    });
+
+    // Lives display
+    this.livesText = this.add.text(padding, 120, '🐾 Lives: 9', {
+      fontSize: '13px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#ff6699',
+      fontStyle: 'bold'
     });
 
     // Pounce cooldown indicator
@@ -256,6 +266,55 @@ export class UIScene extends Phaser.Scene {
       }
     }
 
+    // Lives display
+    if (state.lives !== undefined && this.livesText) {
+      this.livesText.setText(`🐾 Lives: ${state.lives}`);
+      if (state.lives <= 3) {
+        this.livesText.setColor('#FF4444');
+      }
+    }
+
+    // Check for death — lose a life or game over
+    if (state.health <= 0 && !this.gameOverTriggered) {
+      if (state.lives > 1) {
+        // Lose a life, respawn with full health
+        state.lives--;
+        state.health = state.maxHealth;
+        const level = this.scene.get(this.levelKey);
+        if (level && level.player) {
+          level.player.setPosition(level.player.x - 100, 400);
+          level.player.setVelocity(0, 0);
+          // Brief invulnerability flash
+          level.player.setData('invulnerable', true);
+          level.player.setTint(0xff0000);
+          level.tweens.add({
+            targets: level.player,
+            alpha: 0.3,
+            duration: 100,
+            yoyo: true,
+            repeat: 5,
+            onComplete: () => {
+              level.player.setAlpha(1);
+              level.player.clearTint();
+              level.player.setData('invulnerable', false);
+            }
+          });
+          if (level.showQuickMessage) {
+            level.showQuickMessage(`Lost a life! ${state.lives} remaining...`, 0xff4444);
+          }
+        }
+      } else {
+        // No lives left — game over
+        this.gameOverTriggered = true;
+        state.lives = 0;
+        const level = this.scene.get(this.levelKey);
+        if (level) {
+          level.scene.pause();
+        }
+        this.triggerGameOver();
+      }
+    }
+
     // Low vitals warning
     if (state.hunger < 25 || state.thirst < 25) {
       if (!this.warningTween) {
@@ -296,5 +355,80 @@ export class UIScene extends Phaser.Scene {
       this.sound.setVolume(this.musicVolume);
       this.volumeText.setText(`M/N: Vol ${Math.round(this.musicVolume * 100)}%`);
     }
+  }
+
+  triggerGameOver() {
+    // Stop all music and play game over music
+    this.sound.stopAll();
+    this.sound.play('gameover', { loop: false, volume: 0.5 });
+
+    // Dark overlay
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.85);
+    overlay.fillRect(0, 0, 1024, 576);
+    overlay.setDepth(200);
+
+    // Game Over text
+    this.add.text(512, 180, 'GAME OVER', {
+      fontSize: '64px',
+      fontFamily: 'Georgia, serif',
+      color: '#ff4444',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 6
+    }).setOrigin(0.5).setDepth(201);
+
+    this.add.text(512, 260, 'All 9 lives used up...', {
+      fontSize: '22px',
+      fontFamily: 'Georgia, serif',
+      color: '#ffffff',
+      fontStyle: 'italic',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(0.5).setDepth(201);
+
+    this.add.text(512, 320, 'The cats are exhausted and need a nap.', {
+      fontSize: '18px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#cccccc',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5).setDepth(201);
+
+    // Try again button
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0xff6644, 1);
+    btnBg.fillRoundedRect(412, 380, 200, 50, 12);
+    btnBg.setDepth(201);
+    btnBg.setInteractive(new Phaser.Geom.Rectangle(412, 380, 200, 50), Phaser.Geom.Rectangle.Contains);
+
+    const btnText = this.add.text(512, 405, 'Try Again', {
+      fontSize: '24px',
+      fontFamily: 'Georgia, serif',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(0.5).setDepth(202);
+
+    btnBg.on('pointerover', () => {
+      btnBg.clear();
+      btnBg.fillStyle(0xff8866, 1);
+      btnBg.fillRoundedRect(412, 380, 200, 50, 12);
+    });
+    btnBg.on('pointerout', () => {
+      btnBg.clear();
+      btnBg.fillStyle(0xff6644, 1);
+      btnBg.fillRoundedRect(412, 380, 200, 50, 12);
+    });
+    btnBg.on('pointerdown', () => {
+      this.sound.stopAll();
+      const level = this.scene.get(this.levelKey);
+      if (level) {
+        level.scene.stop();
+      }
+      this.scene.stop();
+      this.scene.start('TitleScene');
+    });
   }
 }

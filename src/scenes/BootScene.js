@@ -7,6 +7,9 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     // Load music
+    this.load.audio('mainmenumusic', 'music/mainmenumusic.mp3');
+    this.load.audio('victory', 'music/victory.mp3');
+    this.load.audio('gameover', 'music/gameover.mp3');
     this.load.audio('level1music', 'music/level1music.mp3');
     this.load.audio('level2music', 'music/level2music.mp3');
     this.load.audio('level3music', 'music/level3music.mp3');
@@ -19,9 +22,6 @@ export class BootScene extends Phaser.Scene {
   create() {
     // Generate all placeholder textures
     this.createPlaceholderTextures();
-
-    // Start music (looping)
-    this.sound.play('level1music', { loop: true, volume: 0.4 });
 
     this.scene.start('TitleScene');
   }

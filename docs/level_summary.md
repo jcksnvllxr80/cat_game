@@ -364,3 +364,37 @@ Complete breakdown of what each level contains: mechanics, enemies, NPCs, collec
 | 5 | 5/7 | Whiskers, Luna, Boots, Cleo | -- |
 | 6 | 6/7 | Whiskers, Luna, Boots, Cleo, Mochi | Mochi |
 | 7 | 7/7 | Full party | King Biscuit (NPC) |
+
+---
+
+## Lives System
+
+- Player starts with **9 lives** (classic cat trope)
+- When health reaches 0, player loses 1 life and respawns nearby with full health + brief invulnerability
+- A "Lost a life! X remaining..." message is shown
+- When all 9 lives are used, **Game Over** screen appears:
+  - "GAME OVER" title, "All 9 lives used up..."
+  - "The cats are exhausted and need a nap." (kid-friendly)
+  - `gameover.mp3` plays
+  - "Try Again" button returns to Title Screen
+- Lives are displayed in the HUD (turns red at 3 or fewer)
+- Lives persist across level transitions via playerState
+
+---
+
+## Music System
+
+| Screen/Level | Track File |
+|-------------|------------|
+| Title Screen | `mainmenumusic.mp3` |
+| Zone 1 | `level1music.mp3` |
+| Zone 2 | `level2music.mp3` |
+| Zone 3 | `level3music.mp3` |
+| Zone 4 | `level4music.mp3` |
+| Zone 5 | `level5music.mp3` |
+| Zone 6 | `level6music.mp3` |
+| Zone 7 | `level7music.mp3` |
+| THE END | `victory.mp3` (plays once) |
+| Game Over | `gameover.mp3` (plays once) |
+
+Each level starts its own music in `create()`. Volume: M (down) / N (up), default 40%.

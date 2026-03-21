@@ -39,6 +39,10 @@ export class Level2Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 2 music
+    this.sound.stopAll();
+    this.sound.play('level2music', { loop: true, volume: 0.4 });
+
     // ---- Dark forest background ----
     this.createForestBackground(worldWidth, worldHeight);
 

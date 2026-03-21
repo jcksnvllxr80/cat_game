@@ -39,6 +39,10 @@ export class Level4Scene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
+    // Start level 4 music
+    this.sound.stopAll();
+    this.sound.play('level4music', { loop: true, volume: 0.4 });
+
     // ---- Canyon background ----
     this.createCanyonBackground(worldWidth, worldHeight);
 
