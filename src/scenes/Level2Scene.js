@@ -333,6 +333,9 @@ export class Level2Scene extends Phaser.Scene {
     });
     this.physics.add.collider(this.player, this.hiddenPaths);
     this.physics.add.collider(this.enemies, this.platforms);
+    this.physics.add.collider(this.enemies, this.crates, null, (enemy) => {
+      return enemy.getData('type') !== 'crow';
+    }, this);
 
     this.physics.add.overlap(this.player, this.tunas, this.collectTuna, null, this);
     this.physics.add.overlap(this.player, this.waters, this.collectWater, null, this);
@@ -341,6 +344,8 @@ export class Level2Scene extends Phaser.Scene {
 
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyX = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.keyShift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
@@ -756,11 +761,14 @@ export class Level2Scene extends Phaser.Scene {
     const speed = this.playerState.isRunning ? this.playerState.speed * 1.6 : this.playerState.speed;
 
     // Movement (cat is drawn facing left, so flipX=false=left, flipX=true=right)
-    if (this.cursors.left.isDown) {
+    const leftDown = this.cursors.left.isDown || this.keyA.isDown;
+    const rightDown = this.cursors.right.isDown || this.keyD.isDown;
+
+    if (leftDown) {
       this.player.setVelocityX(-speed);
       this.player.setFlipX(false);
       this.playerState.facingRight = false;
-    } else if (this.cursors.right.isDown) {
+    } else if (rightDown) {
       this.player.setVelocityX(speed);
       this.player.setFlipX(true);
       this.playerState.facingRight = true;
@@ -768,10 +776,10 @@ export class Level2Scene extends Phaser.Scene {
       this.player.setVelocityX(0);
     }
 
-    this.playerState.isRunning = this.keyShift.isDown && (this.cursors.left.isDown || this.cursors.right.isDown);
+    this.playerState.isRunning = this.keyShift.isDown && (leftDown || rightDown);
 
     // Animations
-    const moving = this.cursors.left.isDown || this.cursors.right.isDown;
+    const moving = leftDown || rightDown;
     const animPrefix = isLuna ? 'luna' : 'whiskers';
     if (!onGround) {
       this.player.anims.stop();
@@ -1035,7 +1043,6 @@ export class Level2Scene extends Phaser.Scene {
     this.playerState.mapPieces++;
     this.showQuickMessage("MAP PIECE FOUND! (2/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
-    this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
 
     this.time.delayedCall(1000, () => {
       this.showDialog([
@@ -1066,7 +1073,7 @@ export class Level2Scene extends Phaser.Scene {
 
   drainVitals() {
     const state = this.playerState;
-    const isMoving = this.cursors.left.isDown || this.cursors.right.isDown;
+    const isMoving = this.cursors.left.isDown || this.keyA.isDown || this.cursors.right.isDown || this.keyD.isDown;
     const hasPendant = state.accessories.includes('fish_pendant');
 
     let hungerDrain = 0.3;
@@ -1178,14 +1185,10 @@ export class Level2Scene extends Phaser.Scene {
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to Tuna Bay Docks...", 0x44ff44);
     this.time.delayedCall(1000, () => {
+      this.sound.stopAll();
+      this.sound.play('level3music', { loop: true, volume: 0.4 });
       this.scene.stop('UIScene');
-      // Level 3 would go here
-      this.showDialog([
-        { speaker: 'Whiskers', text: "The Whispering Woods are behind us!" },
-        { speaker: 'Luna', text: "That was scary... but kind of fun!" },
-        { speaker: 'Whiskers', text: "Next stop: Tuna Bay Docks. I can smell the ocean!" },
-        { speaker: 'Whiskers', text: "(End of current prototype — more zones coming soon!)" },
-      ]);
+      this.scene.start('Level3Scene', { playerState: this.playerState });
     });
   }
 }

@@ -96,7 +96,21 @@ export class DialogScene extends Phaser.Scene {
       'King Biscuit': '#FFD700',
       'Frightened Mouse': '#BB9977',
       'Professor Hoot': '#CC9944',
-      'Wandering Cat': '#FFAA66'
+      'Wandering Cat': '#FFAA66',
+      'Captain Saltwhisker': '#5588AA',
+      'Dock Worker': '#CC8844',
+      'Fish Merchant': '#66AACC',
+      'Shopkeeper Cat': '#DDAA66',
+      'Traveling Cat': '#FFAA66',
+      'Kit': '#FFCC88',
+      'Canyon Guide': '#CC7744',
+      'Old Factory Cat': '#888888',
+      'Maintenance Mouse': '#BBAA88',
+      'Shivering Cat': '#99BBDD',
+      'Mountain Goat': '#CCCCAA',
+      'Fortress Mouse': '#AAAAAA',
+      'King Biscuit': '#FFD700',
+      'Head Squirrel': '#AA7744'
     };
 
     this.speakerText.setText(line.speaker);
@@ -143,11 +157,13 @@ export class DialogScene extends Phaser.Scene {
   }
 
   closeDialog() {
-    // Resume whichever level scene is active
-    if (this.scene.isActive('Level2Scene') || this.scene.isPaused('Level2Scene')) {
-      this.scene.resume('Level2Scene');
-    } else {
-      this.scene.resume('Level1Scene');
+    // Resume whichever level scene is paused
+    const levels = ['Level7Scene', 'Level6Scene', 'Level5Scene', 'Level4Scene', 'Level3Scene', 'Level2Scene', 'Level1Scene'];
+    for (const level of levels) {
+      if (this.scene.isActive(level) || this.scene.isPaused(level)) {
+        this.scene.resume(level);
+        break;
+      }
     }
     this.scene.stop();
   }

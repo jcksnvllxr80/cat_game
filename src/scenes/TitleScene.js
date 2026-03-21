@@ -121,12 +121,17 @@ export class TitleScene extends Phaser.Scene {
       btnBg.strokeRoundedRect(width / 2 - 100, height - 100, 200, 50, 12);
     });
 
-    hitZone.on('pointerdown', () => {
+    const startGame = () => {
       this.cameras.main.fadeOut(500, 0, 0, 0);
       this.time.delayedCall(500, () => {
         this.scene.start('Level1Scene');
       });
-    });
+    };
+
+    hitZone.on('pointerdown', startGame);
+
+    this.input.keyboard.once('keydown-ENTER', startGame);
+    this.input.keyboard.once('keydown-SPACE', startGame);
 
     // Controls hint
     this.add.text(width / 2, height - 30, 'Arrow Keys: Move  |  SPACE: Jump  |  X: Pounce  |  E: Interact', {

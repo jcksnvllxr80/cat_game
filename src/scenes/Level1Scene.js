@@ -215,6 +215,7 @@ export class Level1Scene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
     this.physics.add.collider(this.enemies, this.platforms);
+    this.physics.add.collider(this.enemies, this.crates);
 
     // Collectible overlaps
     this.physics.add.overlap(this.player, this.tunas, this.collectTuna, null, this);
@@ -227,6 +228,8 @@ export class Level1Scene extends Phaser.Scene {
 
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyX = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.keyShift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
@@ -394,11 +397,14 @@ export class Level1Scene extends Phaser.Scene {
     const speed = this.playerState.isRunning ? this.playerState.speed * 1.6 : this.playerState.speed;
 
     // Movement (cat is drawn facing left, so flipX=false=left, flipX=true=right)
-    if (this.cursors.left.isDown) {
+    const leftDown = this.cursors.left.isDown || this.keyA.isDown;
+    const rightDown = this.cursors.right.isDown || this.keyD.isDown;
+
+    if (leftDown) {
       this.player.setVelocityX(-speed);
       this.player.setFlipX(false);
       this.playerState.facingRight = false;
-    } else if (this.cursors.right.isDown) {
+    } else if (rightDown) {
       this.player.setVelocityX(speed);
       this.player.setFlipX(true);
       this.playerState.facingRight = true;
@@ -407,10 +413,10 @@ export class Level1Scene extends Phaser.Scene {
     }
 
     // Running (hold shift)
-    this.playerState.isRunning = this.keyShift.isDown && (this.cursors.left.isDown || this.cursors.right.isDown);
+    this.playerState.isRunning = this.keyShift.isDown && (leftDown || rightDown);
 
     // Animations
-    const moving = this.cursors.left.isDown || this.cursors.right.isDown;
+    const moving = leftDown || rightDown;
     if (!onGround) {
       this.player.anims.stop();
     } else if (moving) {
@@ -645,7 +651,6 @@ export class Level1Scene extends Phaser.Scene {
     this.showQuickMessage("MAP PIECE FOUND! (1/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
-    this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
     this.time.delayedCall(1000, () => {
       this.showDialog([
         { speaker: 'Whiskers', text: "I found a piece of the Puzzle Map!" },
@@ -660,7 +665,6 @@ export class Level1Scene extends Phaser.Scene {
     this.playerState.accessories.push('fish_pendant');
     this.showQuickMessage("FISH PENDANT acquired! -25% food drain!", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
-    this.cameras.main.flash(500, 255, 215, 0, false, 0.3);
   }
 
   collectEffect(x, y, color) {
@@ -683,7 +687,7 @@ export class Level1Scene extends Phaser.Scene {
 
   drainVitals() {
     const state = this.playerState;
-    const isMoving = this.cursors.left.isDown || this.cursors.right.isDown;
+    const isMoving = this.cursors.left.isDown || this.keyA.isDown || this.cursors.right.isDown || this.keyD.isDown;
     const hasPendant = state.accessories.includes('fish_pendant');
 
     let hungerDrain = 0.3;  // idle

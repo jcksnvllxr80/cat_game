@@ -130,7 +130,12 @@ export class UIScene extends Phaser.Scene {
     // Zone name display
     const zoneNames = {
       'Level1Scene': 'Zone 1: Purrville Meadows',
-      'Level2Scene': 'Zone 2: Whispering Woods'
+      'Level2Scene': 'Zone 2: Whispering Woods',
+      'Level3Scene': 'Zone 3: Tuna Bay Docks',
+      'Level4Scene': 'Zone 4: Catnip Canyon',
+      'Level5Scene': 'Zone 5: The Yarn Factory',
+      'Level6Scene': 'Zone 6: Snowpaw Summit',
+      'Level7Scene': 'Zone 7: Dog King\'s Fortress'
     };
     this.add.text(1024 / 2, 14, zoneNames[this.levelKey] || '', {
       fontSize: '14px',
@@ -207,7 +212,10 @@ export class UIScene extends Phaser.Scene {
     // Active character
     const charInfo = {
       'whiskers': { name: '🐱 Whiskers', color: '#FF8C42' },
-      'luna': { name: '🌙 Luna', color: '#AA88FF' }
+      'luna': { name: '🌙 Luna', color: '#AA88FF' },
+      'boots': { name: '👟 Boots', color: '#44AAFF' },
+      'cleo': { name: '🐾 Cleo', color: '#FFAA44' },
+      'mochi': { name: '🍡 Mochi', color: '#AADDAA' }
     };
     const active = charInfo[state.activeChar] || charInfo['whiskers'];
     if (this.charLabel) {

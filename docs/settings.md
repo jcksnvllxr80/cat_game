@@ -24,6 +24,11 @@
 | Gravity | 800 | Arcade physics Y gravity |
 | Zone 1 World Width | 4000px | Purrville Meadows |
 | Zone 2 World Width | 5000px | Whispering Woods |
+| Zone 3 World Width | 5500px | Tuna Bay Docks |
+| Zone 4 World Width | 6000px | Catnip Canyon |
+| Zone 5 World Width | 6000px | The Yarn Factory |
+| Zone 6 World Width | 6500px | Snowpaw Summit |
+| Zone 7 World Width | 7000px | Dog King's Fortress |
 | World Height | 576px | Fixed (no vertical scroll) |
 | Tile Size | 32x32 | Platform/ground tiles |
 

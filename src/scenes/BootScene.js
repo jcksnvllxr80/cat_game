@@ -9,6 +9,11 @@ export class BootScene extends Phaser.Scene {
     // Load music
     this.load.audio('level1music', 'music/level1music.mp3');
     this.load.audio('level2music', 'music/level2music.mp3');
+    this.load.audio('level3music', 'music/level3music.mp3');
+    this.load.audio('level4music', 'music/level4music.mp3');
+    this.load.audio('level5music', 'music/level5music.mp3');
+    this.load.audio('level6music', 'music/level6music.mp3');
+    this.load.audio('level7music', 'music/level7music.mp3');
   }
 
   create() {
@@ -56,6 +61,27 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(bodyColor);
     g.fillRoundedRect(cx - 14, 12, 28, 16, 4);
 
+    // Tuxedo white chest (Boots)
+    if (bodyColor === 0x1a1a1a) {
+      g.fillStyle(0xffffff);
+      g.fillRoundedRect(cx - 8, 16, 10, 10, 3);
+    }
+
+    // Siamese dark face mask (Cleo)
+    if (bodyColor === 0xf5deb3) {
+      g.fillStyle(0x8B6914, 0.4);
+      g.fillCircle(cx - 8, 12, 6);
+    }
+
+    // Calico patches (Mochi)
+    if (bodyColor === 0xeeeeee) {
+      g.fillStyle(0xff8c42, 0.6);
+      g.fillCircle(cx - 4, 18, 6);
+      g.fillCircle(cx + 8, 14, 5);
+      g.fillStyle(0x333333, 0.5);
+      g.fillCircle(cx + 2, 22, 4);
+    }
+
     // Stripes (only for orange cats)
     if (bodyColor === 0xff8c42) {
       g.lineStyle(2, earColor, 0.5);
@@ -84,7 +110,8 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(bl2X, bl2Y, legW, legH);
 
     // Paws
-    const pawColor = bodyColor === 0x222222 ? 0x333333 : 0xffd4a3;
+    // Tuxedo (Boots) gets white paws, Siamese (Cleo) gets dark paws, Luna gets dark, others get peach
+    const pawColor = bodyColor === 0x1a1a1a ? 0xffffff : bodyColor === 0x222222 ? 0x333333 : bodyColor === 0xf5deb3 ? 0x8B6914 : bodyColor === 0xeeeeee ? 0xffccaa : 0xffd4a3;
     g.fillStyle(pawColor);
     g.fillRoundedRect(fl1X - 1, fl1Y + legH - 3, legW + 2, 4, 2);
     g.fillRoundedRect(fl2X - 1, fl2Y + legH - 3, legW + 2, 4, 2);
@@ -150,6 +177,15 @@ export class BootScene extends Phaser.Scene {
     // Luna - black cat (4 frames: idle + 3 walk)
     this.generateCatFrames('cat_luna', 0x222222, 0x111111, 0x663366, 0x44ff44);
 
+    // Boots - tuxedo cat (black & white)
+    this.generateCatFrames('cat_boots', 0x1a1a1a, 0x000000, 0xffaaaa, 0x4488ff);
+
+    // Cleo - siamese cat (cream with dark points)
+    this.generateCatFrames('cat_cleo', 0xf5deb3, 0x8B6914, 0xffcccc, 0x2266cc);
+
+    // Mochi - fat calico cat (white/orange/brown patches)
+    this.generateCatFrames('cat_mochi', 0xeeeeee, 0xdddddd, 0xffbbbb, 0x44aa44);
+
     // Create animations using individual frame textures
     this.anims.create({
       key: 'whiskers_idle',
@@ -177,6 +213,51 @@ export class BootScene extends Phaser.Scene {
         { key: 'cat_luna_f1' },
         { key: 'cat_luna_f2' },
         { key: 'cat_luna_f3' },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'boots_idle',
+      frames: [{ key: 'cat_boots_f0' }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: 'boots_walk',
+      frames: [
+        { key: 'cat_boots_f1' },
+        { key: 'cat_boots_f2' },
+        { key: 'cat_boots_f3' },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'cleo_idle',
+      frames: [{ key: 'cat_cleo_f0' }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: 'cleo_walk',
+      frames: [
+        { key: 'cat_cleo_f1' },
+        { key: 'cat_cleo_f2' },
+        { key: 'cat_cleo_f3' },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'mochi_idle',
+      frames: [{ key: 'cat_mochi_f0' }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: 'mochi_walk',
+      frames: [
+        { key: 'cat_mochi_f1' },
+        { key: 'cat_mochi_f2' },
+        { key: 'cat_mochi_f3' },
       ],
       frameRate: 8,
       repeat: -1,
@@ -532,5 +613,527 @@ export class BootScene extends Phaser.Scene {
     this.drawStar(hiddenSparkle, 8, 8, 8, 4, 4);
     hiddenSparkle.generateTexture('hidden_sparkle', 16, 16);
     hiddenSparkle.destroy();
+
+    // ---- ZONE 3: Tuna Bay Docks textures ----
+
+    // Dock platform (wooden planks)
+    const dockPlatform = this.add.graphics();
+    dockPlatform.fillStyle(0x8B6914);
+    dockPlatform.fillRect(0, 0, 32, 32);
+    dockPlatform.fillStyle(0x9B7924);
+    dockPlatform.fillRect(0, 0, 32, 6);
+    dockPlatform.lineStyle(1, 0x6B4914, 0.6);
+    dockPlatform.lineBetween(0, 8, 32, 8);
+    dockPlatform.lineBetween(0, 16, 32, 16);
+    dockPlatform.lineBetween(0, 24, 32, 24);
+    dockPlatform.fillStyle(0x5a3a0a, 0.3);
+    dockPlatform.fillRect(6, 2, 2, 4);
+    dockPlatform.fillRect(22, 10, 2, 4);
+    dockPlatform.generateTexture('dock_platform', 32, 32);
+    dockPlatform.destroy();
+
+    // Dock ground (dark wet wood)
+    const dockGround = this.add.graphics();
+    dockGround.fillStyle(0x5a3a1a);
+    dockGround.fillRect(0, 0, 32, 32);
+    dockGround.fillStyle(0x4a2a0a, 0.5);
+    dockGround.fillRect(3, 5, 6, 3);
+    dockGround.fillRect(14, 18, 5, 4);
+    dockGround.fillRect(24, 8, 4, 3);
+    dockGround.generateTexture('dock_ground', 32, 32);
+    dockGround.destroy();
+
+    // Seagull
+    const seagull = this.add.graphics();
+    seagull.fillStyle(0xffffff);
+    seagull.fillCircle(14, 12, 6);
+    seagull.fillCircle(8, 10, 4);
+    seagull.fillStyle(0xdddddd);
+    seagull.fillTriangle(8, 6, 20, 2, 24, 12);
+    seagull.fillTriangle(10, 6, 22, 0, 28, 8);
+    seagull.fillStyle(0xffaa00);
+    seagull.fillTriangle(3, 10, 8, 9, 8, 11);
+    seagull.fillStyle(0x111111);
+    seagull.fillCircle(7, 9, 1.5);
+    seagull.generateTexture('seagull', 30, 18);
+    seagull.destroy();
+
+    // Crab
+    const crab = this.add.graphics();
+    crab.fillStyle(0xcc4422);
+    crab.fillRoundedRect(6, 10, 20, 12, 4);
+    crab.fillStyle(0xdd5533);
+    crab.fillCircle(16, 10, 8);
+    crab.fillStyle(0x000000);
+    crab.fillCircle(13, 8, 1.5);
+    crab.fillCircle(19, 8, 1.5);
+    crab.fillStyle(0xcc4422);
+    crab.fillCircle(4, 8, 4);
+    crab.fillCircle(28, 8, 4);
+    crab.fillStyle(0xaa3311);
+    crab.fillCircle(3, 6, 2);
+    crab.fillCircle(29, 6, 2);
+    crab.fillStyle(0xcc4422);
+    crab.fillRect(8, 20, 3, 4);
+    crab.fillRect(14, 20, 3, 4);
+    crab.fillRect(20, 20, 3, 4);
+    crab.generateTexture('crab', 32, 26);
+    crab.destroy();
+
+    // Buoy (floating water marker)
+    const buoy = this.add.graphics();
+    buoy.fillStyle(0xff4444);
+    buoy.fillCircle(10, 10, 8);
+    buoy.fillStyle(0xffffff);
+    buoy.fillRect(4, 8, 12, 4);
+    buoy.fillStyle(0xff4444);
+    buoy.fillRect(8, 0, 4, 6);
+    buoy.generateTexture('buoy', 20, 20);
+    buoy.destroy();
+
+    // Anchor (decoration)
+    const anchor = this.add.graphics();
+    anchor.fillStyle(0x555555);
+    anchor.fillRect(10, 0, 4, 24);
+    anchor.fillRect(4, 4, 16, 4);
+    anchor.fillCircle(12, 0, 4);
+    anchor.fillStyle(0x333333);
+    anchor.fillCircle(12, 0, 2);
+    anchor.fillCircle(4, 22, 4);
+    anchor.fillCircle(20, 22, 4);
+    anchor.generateTexture('anchor', 24, 28);
+    anchor.destroy();
+
+    // Water surface (wavy blue)
+    const waterSurface = this.add.graphics();
+    waterSurface.fillStyle(0x2266aa, 0.6);
+    waterSurface.fillRect(0, 0, 32, 32);
+    waterSurface.fillStyle(0x3388cc, 0.4);
+    waterSurface.fillRect(0, 0, 32, 4);
+    waterSurface.fillStyle(0xffffff, 0.2);
+    waterSurface.fillRect(4, 0, 8, 2);
+    waterSurface.fillRect(18, 2, 10, 2);
+    waterSurface.generateTexture('water_surface', 32, 32);
+    waterSurface.destroy();
+
+    // ---- ZONE 4: Catnip Canyon textures ----
+
+    // Canyon platform (red/brown rock)
+    const canyonPlatform = this.add.graphics();
+    canyonPlatform.fillStyle(0x8B4513);
+    canyonPlatform.fillRect(0, 0, 32, 32);
+    canyonPlatform.fillStyle(0xA0522D);
+    canyonPlatform.fillRect(0, 0, 32, 6);
+    canyonPlatform.fillStyle(0x6B3410, 0.4);
+    canyonPlatform.fillRect(5, 10, 4, 4);
+    canyonPlatform.fillRect(20, 16, 6, 3);
+    canyonPlatform.fillRect(12, 22, 3, 5);
+    canyonPlatform.generateTexture('canyon_platform', 32, 32);
+    canyonPlatform.destroy();
+
+    // Canyon ground
+    const canyonGround = this.add.graphics();
+    canyonGround.fillStyle(0x6B3410);
+    canyonGround.fillRect(0, 0, 32, 32);
+    canyonGround.fillStyle(0x5a2a08, 0.5);
+    canyonGround.fillRect(4, 8, 5, 4);
+    canyonGround.fillRect(18, 20, 6, 3);
+    canyonGround.fillRect(10, 4, 3, 5);
+    canyonGround.generateTexture('canyon_ground', 32, 32);
+    canyonGround.destroy();
+
+    // Hawk
+    const hawk = this.add.graphics();
+    hawk.fillStyle(0x663311);
+    hawk.fillCircle(16, 12, 6);
+    hawk.fillCircle(10, 10, 4);
+    hawk.fillStyle(0x884422);
+    hawk.fillTriangle(8, 6, 22, 0, 28, 12);
+    hawk.fillTriangle(10, 6, 24, 2, 30, 10);
+    hawk.fillStyle(0xffcc00);
+    hawk.fillTriangle(4, 10, 9, 9, 9, 11);
+    hawk.fillStyle(0xffff00);
+    hawk.fillCircle(8, 9, 1.5);
+    hawk.fillStyle(0x000000);
+    hawk.fillCircle(8, 9, 0.8);
+    hawk.generateTexture('hawk', 32, 18);
+    hawk.destroy();
+
+    // Snake
+    const snake = this.add.graphics();
+    snake.fillStyle(0x228833);
+    snake.fillRoundedRect(0, 10, 28, 8, 4);
+    snake.fillStyle(0x33aa44);
+    snake.fillCircle(4, 12, 5);
+    snake.fillStyle(0xff0000);
+    snake.fillTriangle(0, 11, 0, 13, -3, 12);
+    snake.fillStyle(0xffff00);
+    snake.fillCircle(3, 10, 1.5);
+    snake.fillCircle(6, 10, 1.5);
+    snake.fillStyle(0x000000);
+    snake.fillCircle(3, 10, 0.7);
+    snake.fillCircle(6, 10, 0.7);
+    snake.fillStyle(0x116622, 0.5);
+    snake.fillRect(12, 10, 3, 8);
+    snake.fillRect(20, 10, 3, 8);
+    snake.generateTexture('snake', 30, 22);
+    snake.destroy();
+
+    // Vine (for Cleo rescue puzzle)
+    const vine = this.add.graphics();
+    vine.fillStyle(0x226622);
+    vine.fillRect(4, 0, 6, 48);
+    vine.fillStyle(0x33aa33);
+    vine.fillCircle(7, 10, 6);
+    vine.fillCircle(7, 28, 5);
+    vine.fillCircle(7, 42, 4);
+    vine.fillStyle(0x44cc44, 0.6);
+    vine.fillCircle(3, 16, 4);
+    vine.fillCircle(11, 34, 4);
+    vine.generateTexture('vine', 14, 48);
+    vine.destroy();
+
+    // Cactus (decoration)
+    const cactus = this.add.graphics();
+    cactus.fillStyle(0x228833);
+    cactus.fillRoundedRect(8, 6, 8, 26, 3);
+    cactus.fillRoundedRect(0, 12, 8, 6, 3);
+    cactus.fillRoundedRect(16, 16, 8, 6, 3);
+    cactus.fillRect(6, 8, 2, 6);
+    cactus.fillRect(16, 12, 2, 6);
+    cactus.fillStyle(0xff4488);
+    cactus.fillCircle(12, 6, 2);
+    cactus.generateTexture('cactus', 24, 32);
+    cactus.destroy();
+
+    // ---- ZONE 5: Yarn Factory textures ----
+
+    // Factory platform (metal grating)
+    const factoryPlatform = this.add.graphics();
+    factoryPlatform.fillStyle(0x555555);
+    factoryPlatform.fillRect(0, 0, 32, 32);
+    factoryPlatform.fillStyle(0x666666);
+    factoryPlatform.fillRect(0, 0, 32, 6);
+    factoryPlatform.lineStyle(1, 0x444444, 0.5);
+    factoryPlatform.lineBetween(0, 10, 32, 10);
+    factoryPlatform.lineBetween(0, 18, 32, 18);
+    factoryPlatform.lineBetween(0, 26, 32, 26);
+    factoryPlatform.lineBetween(8, 0, 8, 32);
+    factoryPlatform.lineBetween(16, 0, 16, 32);
+    factoryPlatform.lineBetween(24, 0, 24, 32);
+    factoryPlatform.generateTexture('factory_platform', 32, 32);
+    factoryPlatform.destroy();
+
+    // Factory ground (dark metal floor)
+    const factoryGround = this.add.graphics();
+    factoryGround.fillStyle(0x3a3a3a);
+    factoryGround.fillRect(0, 0, 32, 32);
+    factoryGround.fillStyle(0x2a2a2a, 0.5);
+    factoryGround.fillRect(4, 8, 6, 3);
+    factoryGround.fillRect(18, 20, 5, 4);
+    factoryGround.fillStyle(0x444444, 0.3);
+    factoryGround.fillRect(0, 0, 32, 2);
+    factoryGround.generateTexture('factory_ground', 32, 32);
+    factoryGround.destroy();
+
+    // Yarn ball
+    const yarnBall = this.add.graphics();
+    yarnBall.fillStyle(0xff4488);
+    yarnBall.fillCircle(12, 12, 10);
+    yarnBall.fillStyle(0xff66aa, 0.6);
+    yarnBall.fillCircle(8, 8, 4);
+    yarnBall.lineStyle(1, 0xcc2266, 0.5);
+    yarnBall.lineBetween(4, 10, 18, 6);
+    yarnBall.lineBetween(6, 16, 20, 12);
+    yarnBall.lineBetween(10, 4, 14, 18);
+    yarnBall.generateTexture('yarn_ball', 24, 24);
+    yarnBall.destroy();
+
+    // Factory rat
+    const factoryRat = this.add.graphics();
+    factoryRat.fillStyle(0x666655);
+    factoryRat.fillRoundedRect(4, 10, 18, 10, 3);
+    factoryRat.fillCircle(6, 10, 6);
+    factoryRat.fillStyle(0x888877);
+    factoryRat.fillCircle(3, 7, 3);
+    factoryRat.fillCircle(9, 7, 3);
+    factoryRat.fillStyle(0xff8888);
+    factoryRat.fillCircle(3, 7, 1.5);
+    factoryRat.fillCircle(9, 7, 1.5);
+    factoryRat.fillStyle(0x000000);
+    factoryRat.fillCircle(4, 10, 1.5);
+    factoryRat.fillCircle(8, 10, 1.5);
+    factoryRat.fillStyle(0xff9999);
+    factoryRat.fillTriangle(1, 11, 4, 10, 4, 12);
+    factoryRat.fillStyle(0xccbbaa);
+    factoryRat.lineBetween(20, 14, 28, 10);
+    factoryRat.lineBetween(28, 10, 30, 12);
+    factoryRat.generateTexture('factory_rat', 32, 24);
+    factoryRat.destroy();
+
+    // Mechanical spider
+    const mechSpider = this.add.graphics();
+    mechSpider.fillStyle(0x444444);
+    mechSpider.fillCircle(12, 10, 7);
+    mechSpider.fillStyle(0xff0000);
+    mechSpider.fillCircle(9, 8, 2);
+    mechSpider.fillCircle(15, 8, 2);
+    mechSpider.fillStyle(0x333333);
+    mechSpider.lineStyle(2, 0x555555);
+    mechSpider.lineBetween(5, 10, 0, 4);
+    mechSpider.lineBetween(5, 12, 0, 18);
+    mechSpider.lineBetween(19, 10, 24, 4);
+    mechSpider.lineBetween(19, 12, 24, 18);
+    mechSpider.lineBetween(7, 14, 2, 20);
+    mechSpider.lineBetween(17, 14, 22, 20);
+    mechSpider.generateTexture('mech_spider', 26, 22);
+    mechSpider.destroy();
+
+    // Switch (factory puzzle)
+    const sw = this.add.graphics();
+    sw.fillStyle(0x888888);
+    sw.fillRect(4, 4, 16, 20);
+    sw.fillStyle(0xff4444);
+    sw.fillCircle(12, 10, 5);
+    sw.fillStyle(0x666666);
+    sw.fillRect(8, 16, 8, 6);
+    sw.lineStyle(2, 0xaaaaaa);
+    sw.strokeRect(4, 4, 16, 20);
+    sw.generateTexture('switch_off', 24, 28);
+    sw.destroy();
+
+    const swOn = this.add.graphics();
+    swOn.fillStyle(0x888888);
+    swOn.fillRect(4, 4, 16, 20);
+    swOn.fillStyle(0x44ff44);
+    swOn.fillCircle(12, 10, 5);
+    swOn.fillStyle(0x666666);
+    swOn.fillRect(8, 16, 8, 6);
+    swOn.lineStyle(2, 0xaaaaaa);
+    swOn.strokeRect(4, 4, 16, 20);
+    swOn.generateTexture('switch_on', 24, 28);
+    swOn.destroy();
+
+    // Conveyor belt arrow (visual indicator)
+    const convArrow = this.add.graphics();
+    convArrow.fillStyle(0xffaa00, 0.5);
+    convArrow.fillTriangle(0, 8, 16, 0, 16, 16);
+    convArrow.generateTexture('conv_arrow', 16, 16);
+    convArrow.destroy();
+
+    // ---- ZONE 6: Snowpaw Summit textures ----
+
+    // Snow platform
+    const snowPlatform = this.add.graphics();
+    snowPlatform.fillStyle(0x8899aa);
+    snowPlatform.fillRect(0, 0, 32, 32);
+    snowPlatform.fillStyle(0xeeeeff);
+    snowPlatform.fillRect(0, 0, 32, 8);
+    snowPlatform.fillStyle(0xffffff, 0.6);
+    snowPlatform.fillCircle(5, 3, 4);
+    snowPlatform.fillCircle(16, 2, 5);
+    snowPlatform.fillCircle(27, 4, 4);
+    snowPlatform.fillStyle(0x7788aa, 0.3);
+    snowPlatform.fillRect(4, 14, 3, 4);
+    snowPlatform.fillRect(20, 18, 4, 3);
+    snowPlatform.generateTexture('snow_platform', 32, 32);
+    snowPlatform.destroy();
+
+    // Snow ground
+    const snowGround = this.add.graphics();
+    snowGround.fillStyle(0x667788);
+    snowGround.fillRect(0, 0, 32, 32);
+    snowGround.fillStyle(0x556677, 0.5);
+    snowGround.fillRect(4, 6, 5, 4);
+    snowGround.fillRect(18, 18, 6, 3);
+    snowGround.fillRect(10, 24, 4, 4);
+    snowGround.generateTexture('snow_ground', 32, 32);
+    snowGround.destroy();
+
+    // Snow fox
+    const snowFox = this.add.graphics();
+    snowFox.fillStyle(0xddddee);
+    snowFox.fillRoundedRect(4, 10, 20, 12, 4);
+    snowFox.fillCircle(8, 10, 7);
+    snowFox.fillStyle(0xccccdd);
+    snowFox.fillTriangle(2, 6, 5, 0, 8, 6);
+    snowFox.fillTriangle(8, 6, 11, 0, 14, 6);
+    snowFox.fillStyle(0xffbbbb);
+    snowFox.fillTriangle(3, 6, 5, 2, 7, 6);
+    snowFox.fillTriangle(9, 6, 11, 2, 13, 6);
+    snowFox.fillStyle(0x2244aa);
+    snowFox.fillCircle(5, 10, 2);
+    snowFox.fillCircle(11, 10, 2);
+    snowFox.fillStyle(0x000000);
+    snowFox.fillCircle(8, 13, 1.5);
+    snowFox.fillStyle(0xddddee);
+    snowFox.fillRoundedRect(22, 8, 10, 4, 2);
+    snowFox.fillStyle(0xccccdd);
+    snowFox.fillCircle(30, 10, 3);
+    snowFox.generateTexture('snow_fox', 34, 24);
+    snowFox.destroy();
+
+    // Ice bat
+    const iceBat = this.add.graphics();
+    iceBat.fillStyle(0x6688cc);
+    iceBat.fillCircle(12, 10, 5);
+    iceBat.fillStyle(0x88aadd);
+    iceBat.fillTriangle(7, 8, 0, 2, 4, 14);
+    iceBat.fillTriangle(17, 8, 24, 2, 20, 14);
+    iceBat.fillStyle(0xff4444);
+    iceBat.fillCircle(10, 9, 1.5);
+    iceBat.fillCircle(14, 9, 1.5);
+    iceBat.generateTexture('ice_bat', 26, 18);
+    iceBat.destroy();
+
+    // Snowflake
+    const snowflake = this.add.graphics();
+    snowflake.fillStyle(0xffffff, 0.7);
+    snowflake.fillCircle(4, 4, 3);
+    snowflake.fillStyle(0xeeeeff, 0.5);
+    snowflake.fillCircle(4, 4, 1);
+    snowflake.generateTexture('snowflake', 8, 8);
+    snowflake.destroy();
+
+    // Pine tree
+    const pine = this.add.graphics();
+    pine.fillStyle(0x3a2a1a);
+    pine.fillRect(10, 30, 6, 16);
+    pine.fillStyle(0x225533);
+    pine.fillTriangle(0, 35, 13, 8, 26, 35);
+    pine.fillStyle(0x336644);
+    pine.fillTriangle(3, 28, 13, 4, 23, 28);
+    pine.fillStyle(0x447755);
+    pine.fillTriangle(5, 20, 13, 0, 21, 20);
+    pine.fillStyle(0xeeeeff, 0.4);
+    pine.fillTriangle(5, 20, 13, 0, 21, 20);
+    pine.generateTexture('pine_tree', 26, 46);
+    pine.destroy();
+
+    // ---- ZONE 7: Dog King's Fortress textures ----
+
+    // Fortress platform (dark stone bricks)
+    const fortPlatform = this.add.graphics();
+    fortPlatform.fillStyle(0x444444);
+    fortPlatform.fillRect(0, 0, 32, 32);
+    fortPlatform.fillStyle(0x555555);
+    fortPlatform.fillRect(0, 0, 32, 6);
+    fortPlatform.lineStyle(1, 0x333333, 0.6);
+    fortPlatform.lineBetween(0, 10, 32, 10);
+    fortPlatform.lineBetween(0, 20, 32, 20);
+    fortPlatform.lineBetween(16, 0, 16, 10);
+    fortPlatform.lineBetween(8, 10, 8, 20);
+    fortPlatform.lineBetween(24, 10, 24, 20);
+    fortPlatform.lineBetween(12, 20, 12, 32);
+    fortPlatform.generateTexture('fortress_platform', 32, 32);
+    fortPlatform.destroy();
+
+    // Fortress ground (dark cobblestone)
+    const fortGround = this.add.graphics();
+    fortGround.fillStyle(0x2a2a2a);
+    fortGround.fillRect(0, 0, 32, 32);
+    fortGround.fillStyle(0x333333, 0.5);
+    fortGround.fillRect(2, 4, 6, 5);
+    fortGround.fillRect(12, 14, 8, 5);
+    fortGround.fillRect(22, 6, 5, 6);
+    fortGround.lineStyle(1, 0x1a1a1a, 0.3);
+    fortGround.lineBetween(0, 8, 32, 8);
+    fortGround.lineBetween(0, 20, 32, 20);
+    fortGround.generateTexture('fortress_ground', 32, 32);
+    fortGround.destroy();
+
+    // Fortress guard (armored dog)
+    const guard = this.add.graphics();
+    guard.fillStyle(0x666666);
+    guard.fillRoundedRect(4, 8, 22, 18, 4);
+    guard.fillStyle(0x888888);
+    guard.fillCircle(12, 8, 8);
+    guard.fillStyle(0x555555);
+    guard.fillRoundedRect(2, 4, 18, 8, 3);
+    guard.fillStyle(0xccaa44);
+    guard.fillCircle(8, 10, 2);
+    guard.fillCircle(16, 10, 2);
+    guard.fillStyle(0x000000);
+    guard.fillCircle(8, 10, 1);
+    guard.fillCircle(16, 10, 1);
+    guard.fillStyle(0x444444);
+    guard.fillTriangle(10, 13, 14, 13, 12, 16);
+    guard.fillStyle(0x666666);
+    guard.fillRect(6, 24, 5, 8);
+    guard.fillRect(18, 24, 5, 8);
+    guard.generateTexture('fortress_guard', 28, 34);
+    guard.destroy();
+
+    // Fortress bat
+    const fortBat = this.add.graphics();
+    fortBat.fillStyle(0x333333);
+    fortBat.fillCircle(12, 10, 5);
+    fortBat.fillStyle(0x444444);
+    fortBat.fillTriangle(7, 8, 0, 2, 4, 14);
+    fortBat.fillTriangle(17, 8, 24, 2, 20, 14);
+    fortBat.fillStyle(0xff2222);
+    fortBat.fillCircle(10, 9, 1.5);
+    fortBat.fillCircle(14, 9, 1.5);
+    fortBat.generateTexture('fortress_bat', 26, 18);
+    fortBat.destroy();
+
+    // King Biscuit (tiny chihuahua with oversized crown)
+    const biscuit = this.add.graphics();
+    // Body (tiny)
+    biscuit.fillStyle(0xddbb88);
+    biscuit.fillRoundedRect(8, 18, 16, 12, 4);
+    // Head (round, big eyes)
+    biscuit.fillStyle(0xddbb88);
+    biscuit.fillCircle(16, 16, 10);
+    // Big chihuahua ears
+    biscuit.fillStyle(0xccaa77);
+    biscuit.fillTriangle(6, 12, 10, 4, 14, 12);
+    biscuit.fillTriangle(18, 12, 22, 4, 26, 12);
+    biscuit.fillStyle(0xffccaa);
+    biscuit.fillTriangle(8, 12, 10, 6, 12, 12);
+    biscuit.fillTriangle(20, 12, 22, 6, 24, 12);
+    // Eyes (big, watery)
+    biscuit.fillStyle(0x442200);
+    biscuit.fillCircle(13, 16, 3);
+    biscuit.fillCircle(19, 16, 3);
+    biscuit.fillStyle(0xffffff);
+    biscuit.fillCircle(12, 15, 1.5);
+    biscuit.fillCircle(18, 15, 1.5);
+    // Nose
+    biscuit.fillStyle(0x000000);
+    biscuit.fillCircle(16, 19, 1.5);
+    // Tiny legs
+    biscuit.fillStyle(0xddbb88);
+    biscuit.fillRect(10, 28, 4, 5);
+    biscuit.fillRect(18, 28, 4, 5);
+    // Oversized crown (sliding over eyes)
+    biscuit.fillStyle(0xffd700);
+    biscuit.fillRect(6, 4, 20, 8);
+    biscuit.fillStyle(0xffee44);
+    biscuit.fillTriangle(6, 4, 10, 0, 14, 4);
+    biscuit.fillTriangle(14, 4, 18, 0, 22, 4);
+    biscuit.fillTriangle(22, 4, 26, 0, 26, 4);
+    // Crown jewels
+    biscuit.fillStyle(0xff4444);
+    biscuit.fillCircle(10, 6, 2);
+    biscuit.fillStyle(0x4444ff);
+    biscuit.fillCircle(16, 6, 2);
+    biscuit.fillStyle(0x44ff44);
+    biscuit.fillCircle(22, 6, 2);
+    biscuit.generateTexture('king_biscuit', 32, 34);
+    biscuit.destroy();
+
+    // Torch (fortress decoration)
+    const torch = this.add.graphics();
+    torch.fillStyle(0x6B4914);
+    torch.fillRect(4, 10, 4, 14);
+    torch.fillStyle(0xff6600);
+    torch.fillCircle(6, 8, 5);
+    torch.fillStyle(0xffaa00, 0.7);
+    torch.fillCircle(6, 6, 3);
+    torch.fillStyle(0xffff00, 0.5);
+    torch.fillCircle(6, 5, 2);
+    torch.generateTexture('torch', 12, 24);
+    torch.destroy();
   }
 }
