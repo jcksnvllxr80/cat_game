@@ -968,17 +968,34 @@ export class Level7Scene extends Phaser.Scene {
         enemy.body.reset(enemy.x, enemy.y);
       } else {
         // Ground patrol
+        if (enemy.y > 590) { enemy.destroy(); return; }
+
         const startX = enemy.getData('startX');
         const range = enemy.getData('patrolRange');
-        if (enemy.x > startX + range) {
-          enemy.setData('direction', -1);
-          enemy.setVelocityX(-50);
-          enemy.setFlipX(true);
-        } else if (enemy.x < startX - range) {
-          enemy.setData('direction', 1);
-          enemy.setVelocityX(50);
-          enemy.setFlipX(false);
+        let dir = enemy.getData('direction') || 1;
+
+        if (enemy.x > startX + range) dir = -1;
+        else if (enemy.x < startX - range) dir = 1;
+
+        if (dir === 1 && enemy.body.blocked.right) dir = -1;
+        else if (dir === -1 && enemy.body.blocked.left) dir = 1;
+
+        if (enemy.body.blocked.down) {
+          const lookX = enemy.x + (dir * 24);
+          const lookY = enemy.y + 32;
+          let groundAhead = false;
+          this.platforms.children.each(plat => {
+            const b = plat.getBounds();
+            if (lookX >= b.left && lookX <= b.right && lookY >= b.top && lookY <= b.bottom + 20) {
+              groundAhead = true;
+            }
+          });
+          if (!groundAhead) dir = -dir;
         }
+
+        enemy.setData('direction', dir);
+        enemy.setVelocityX(dir * 50);
+        enemy.setFlipX(dir === -1);
       }
     });
 
@@ -998,10 +1015,11 @@ export class Level7Scene extends Phaser.Scene {
 
     // Fall into lava pit
     if (this.player.y > 560) {
-      this.playerState.health = Math.max(0, this.playerState.health - 10);
+      this.playerState.health = 0;
       this.player.setPosition(this.player.x - 100, 400);
       this.player.setVelocity(0, 0);
-      this.showQuickMessage("Fell into the lava pit!", 0xff6666);
+      this.showQuickMessage("Fell into the lava pit! Lost a life!", 0xff4444);
+      this.events.emit('updateVitals', this.playerState);
     }
   }
 
@@ -1115,6 +1133,7 @@ export class Level7Scene extends Phaser.Scene {
 
     // Final level enemies do 15 damage
     this.playerState.health = Math.max(0, this.playerState.health - 15);
+    this.events.emit('updateVitals', this.playerState);
     player.setData('invulnerable', true);
     player.setTint(0xff0000);
 

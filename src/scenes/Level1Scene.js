@@ -457,27 +457,48 @@ export class Level1Scene extends Phaser.Scene {
     // Enemy patrol AI
     this.enemies.children.each(enemy => {
       if (!enemy.active) return;
+
+      // Remove enemies that fell into pits
+      if (enemy.y > 590) { enemy.destroy(); return; }
+
       const startX = enemy.getData('startX');
       const range = enemy.getData('patrolRange');
-      const dir = enemy.getData('direction');
+      let dir = enemy.getData('direction') || 1;
 
-      if (enemy.x > startX + range) {
-        enemy.setData('direction', -1);
-        enemy.setVelocityX(-60);
-        enemy.setFlipX(true);
-      } else if (enemy.x < startX - range) {
-        enemy.setData('direction', 1);
-        enemy.setVelocityX(60);
-        enemy.setFlipX(false);
+      // Reverse at patrol range limits
+      if (enemy.x > startX + range) dir = -1;
+      else if (enemy.x < startX - range) dir = 1;
+
+      // Reverse if blocked by a wall or crate
+      if (dir === 1 && enemy.body.blocked.right) dir = -1;
+      else if (dir === -1 && enemy.body.blocked.left) dir = 1;
+
+      // Pit detection: look 24px ahead and 32px below feet — if no ground, reverse
+      if (enemy.body.blocked.down) {
+        const lookX = enemy.x + (dir * 24);
+        const lookY = enemy.y + 32;
+        let groundAhead = false;
+        this.platforms.children.each(plat => {
+          const b = plat.getBounds();
+          if (lookX >= b.left && lookX <= b.right && lookY >= b.top && lookY <= b.bottom + 20) {
+            groundAhead = true;
+          }
+        });
+        if (!groundAhead) dir = -dir;
       }
+
+      enemy.setData('direction', dir);
+      enemy.setVelocityX(dir * 60);
+      enemy.setFlipX(dir === -1);
     });
 
     // Fall into pit = respawn
     if (this.player.y > 560) {
-      this.playerState.health = Math.max(0, this.playerState.health - 10);
+      this.playerState.health = 0;
       this.player.setPosition(this.player.x - 100, 400);
       this.player.setVelocity(0, 0);
-      this.showQuickMessage("Ouch! Be careful near pits!", 0xff6666);
+      this.showQuickMessage("Fell in a pit! Lost a life!", 0xff4444);
+      this.events.emit('updateVitals', this.playerState);
     }
   }
 
@@ -607,6 +628,7 @@ export class Level1Scene extends Phaser.Scene {
     if (player.getData('invulnerable')) return;
 
     this.playerState.health = Math.max(0, this.playerState.health - 10);
+    this.events.emit('updateVitals', this.playerState);
     player.setData('invulnerable', true);
     player.setTint(0xff0000);
 

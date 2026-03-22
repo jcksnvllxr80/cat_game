@@ -791,26 +791,44 @@ export class Level4Scene extends Phaser.Scene {
         enemy.body.reset(enemy.x, enemy.y);
       } else {
         // Ground patrol
+        if (enemy.y > 590) { enemy.destroy(); return; }
+
         const startX = enemy.getData('startX');
         const range = enemy.getData('patrolRange');
-        if (enemy.x > startX + range) {
-          enemy.setData('direction', -1);
-          enemy.setVelocityX(-50);
-          enemy.setFlipX(true);
-        } else if (enemy.x < startX - range) {
-          enemy.setData('direction', 1);
-          enemy.setVelocityX(50);
-          enemy.setFlipX(false);
+        let dir = enemy.getData('direction') || 1;
+
+        if (enemy.x > startX + range) dir = -1;
+        else if (enemy.x < startX - range) dir = 1;
+
+        if (dir === 1 && enemy.body.blocked.right) dir = -1;
+        else if (dir === -1 && enemy.body.blocked.left) dir = 1;
+
+        if (enemy.body.blocked.down) {
+          const lookX = enemy.x + (dir * 24);
+          const lookY = enemy.y + 32;
+          let groundAhead = false;
+          this.platforms.children.each(plat => {
+            const b = plat.getBounds();
+            if (lookX >= b.left && lookX <= b.right && lookY >= b.top && lookY <= b.bottom + 20) {
+              groundAhead = true;
+            }
+          });
+          if (!groundAhead) dir = -dir;
         }
+
+        enemy.setData('direction', dir);
+        enemy.setVelocityX(dir * 50);
+        enemy.setFlipX(dir === -1);
       }
     });
 
     // Fall into pit
     if (this.player.y > 560) {
-      this.playerState.health = Math.max(0, this.playerState.health - 10);
+      this.playerState.health = 0;
       this.player.setPosition(this.player.x - 100, 400);
       this.player.setVelocity(0, 0);
-      this.showQuickMessage("Ouch! Be careful near the crevasses!", 0xff6666);
+      this.showQuickMessage("Fell in a crevasse! Lost a life!", 0xff4444);
+      this.events.emit('updateVitals', this.playerState);
     }
   }
 
@@ -933,6 +951,7 @@ export class Level4Scene extends Phaser.Scene {
     if (player.getData('invulnerable')) return;
 
     this.playerState.health = Math.max(0, this.playerState.health - 10);
+    this.events.emit('updateVitals', this.playerState);
     player.setData('invulnerable', true);
     player.setTint(0xff0000);
 
