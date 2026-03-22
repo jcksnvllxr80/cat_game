@@ -23,6 +23,7 @@ export class Level7Scene extends Phaser.Scene {
       accessories: [],
       speed: 200,
       jumpPower: -400,
+      lives: 9,
       isExhausted: false,
     };
     // Party & switching state
@@ -899,7 +900,7 @@ export class Level7Scene extends Phaser.Scene {
       this.player.anims.stop();
     } else if (moving) {
       const walkAnim = `${animPrefix}_walk`;
-      if (this.player.anims.currentAnim?.key !== walkAnim) {
+      if (!this.player.anims.isPlaying || this.player.anims.currentAnim?.key !== walkAnim) {
         this.player.play(walkAnim);
       }
       this.player.anims.msPerFrame = this.playerState.isRunning || this.sprintActive ? 80 : 125;
@@ -1014,12 +1015,9 @@ export class Level7Scene extends Phaser.Scene {
     this.updateDarknessOverlay();
 
     // Fall into lava pit
-    if (this.player.y > 560) {
-      this.playerState.health = 0;
-      this.player.setPosition(this.player.x - 100, 400);
-      this.player.setVelocity(0, 0);
-      this.showQuickMessage("Fell into the lava pit! Lost a life!", 0xff4444);
-      this.events.emit('updateVitals', this.playerState);
+    if (this.player.y > 560 && !this.player.getData('pitCooldown')) {
+      this.player.setData('pitCooldown', true);
+      this.loseLife("Fell in a pit!", Math.max(100, this.player.x - 100), 400);
     }
   }
 
@@ -1133,6 +1131,10 @@ export class Level7Scene extends Phaser.Scene {
 
     // Final level enemies do 15 damage
     this.playerState.health = Math.max(0, this.playerState.health - 15);
+    if (this.playerState.health <= 0) {
+      this.loseLife("KO'd by enemy!", player.x, player.y);
+      return;
+    }
     this.events.emit('updateVitals', this.playerState);
     player.setData('invulnerable', true);
     player.setTint(0xff0000);
@@ -1157,6 +1159,34 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
+  loseLife(message, respawnX, respawnY) {
+    respawnX = respawnX || 100;
+    respawnY = respawnY || 400;
+    this.playerState.lives = Math.max(0, (this.playerState.lives || 1) - 1);
+    this.playerState.health = this.playerState.maxHealth;
+    this.player.setPosition(respawnX, respawnY);
+    this.player.setVelocity(0, 0);
+    this.player.setData('invulnerable', true);
+    this.player.setTint(0xff4444);
+    this.tweens.add({
+      targets: this.player,
+      alpha: 0.3,
+      duration: 100,
+      yoyo: true,
+      repeat: 5,
+      onComplete: () => {
+        this.player.setAlpha(1);
+        this.player.clearTint();
+        this.player.setData('invulnerable', false);
+        this.player.setData('pitCooldown', false);
+      }
+    });
+    if (this.playerState.lives > 0) {
+      this.showQuickMessage(`${message} Lives: ${this.playerState.lives} left!`, 0xff4444);
+    }
+    this.events.emit('updateVitals', this.playerState);
+  }
+
   collectTuna(player, tuna) {
     const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
@@ -1164,6 +1194,7 @@ export class Level7Scene extends Phaser.Scene {
     this.playerState.tunasCollected++;
     this.showQuickMessage("+25 Hunger!", 0x4a90d9);
     this.collectEffect(tx, ty, 0x4a90d9);
+    try { this.sound.play('tunapickup', { volume: 0.6 }); } catch(e) {}
   }
 
   collectWater(player, water) {
@@ -1173,6 +1204,7 @@ export class Level7Scene extends Phaser.Scene {
     this.playerState.watersCollected++;
     this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
     this.collectEffect(wx, wy, 0x4fc3f7);
+    try { this.sound.play('waterpickup', { volume: 0.6 }); } catch(e) {}
   }
 
   collectMapPiece(player, piece) {

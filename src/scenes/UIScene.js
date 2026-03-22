@@ -274,45 +274,12 @@ export class UIScene extends Phaser.Scene {
       }
     }
 
-    // Check for death — lose a life or game over
-    if (state.health <= 0 && !this.gameOverTriggered) {
-      if (state.lives > 1) {
-        // Lose a life, respawn with full health
-        state.lives--;
-        state.health = state.maxHealth;
-        const level = this.scene.get(this.levelKey);
-        if (level && level.player) {
-          level.player.setPosition(level.player.x - 100, 400);
-          level.player.setVelocity(0, 0);
-          // Brief invulnerability flash
-          level.player.setData('invulnerable', true);
-          level.player.setTint(0xff0000);
-          level.tweens.add({
-            targets: level.player,
-            alpha: 0.3,
-            duration: 100,
-            yoyo: true,
-            repeat: 5,
-            onComplete: () => {
-              level.player.setAlpha(1);
-              level.player.clearTint();
-              level.player.setData('invulnerable', false);
-            }
-          });
-          if (level.showQuickMessage) {
-            level.showQuickMessage(`Lost a life! ${state.lives} remaining...`, 0xff4444);
-          }
-        }
-      } else {
-        // No lives left — game over
-        this.gameOverTriggered = true;
-        state.lives = 0;
-        const level = this.scene.get(this.levelKey);
-        if (level) {
-          level.scene.pause();
-        }
-        this.triggerGameOver();
-      }
+    // Game over when lives hit 0 (life deduction handled by each level)
+    if (state.lives !== undefined && state.lives <= 0 && !this.gameOverTriggered) {
+      this.gameOverTriggered = true;
+      const level = this.scene.get(this.levelKey);
+      if (level) level.scene.pause();
+      this.triggerGameOver();
     }
 
     // Low vitals warning

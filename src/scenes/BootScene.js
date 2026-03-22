@@ -10,6 +10,8 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('mainmenumusic', 'music/mainmenumusic.mp3');
     this.load.audio('victory', 'music/victory.mp3');
     this.load.audio('gameover', 'music/gameover.mp3');
+    this.load.audio('tunapickup', 'sounds/tunapickup.mp3');
+    this.load.audio('waterpickup', 'sounds/waterpickup.mp3');
     this.load.audio('level1music', 'music/level1music.mp3');
     this.load.audio('level2music', 'music/level2music.mp3');
     this.load.audio('level3music', 'music/level3music.mp3');
