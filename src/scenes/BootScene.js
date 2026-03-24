@@ -161,6 +161,426 @@ export class BootScene extends Phaser.Scene {
     g.lineBetween(cx - 6, 15, cx - 1, 15);
   }
 
+  // Draw a cat in a pounce/lunge pose — body tilted forward, front paws extended
+  drawCatPounce(g, bodyColor, earColor, earInnerColor, eyeColor, phase) {
+    const cx = 24;
+
+    // Tail — straight back and up
+    g.lineStyle(3, bodyColor);
+    g.lineBetween(cx + 12, 10, cx + 20, 4);
+
+    // Body — tilted forward (angled down)
+    g.fillStyle(bodyColor);
+    g.fillRoundedRect(cx - 16, 14, 30, 14, 4);
+
+    // Character-specific markings
+    this.drawCharMarkings(g, bodyColor, cx, 14);
+
+    // Legs — crouched (phase 0) or lunging (phase 1)
+    g.fillStyle(bodyColor);
+    if (phase === 0) {
+      // Crouch — legs bent under body
+      g.fillRect(cx - 12, 26, 5, 6);
+      g.fillRect(cx - 6, 27, 5, 5);
+      g.fillRect(cx + 4, 27, 5, 5);
+      g.fillRect(cx + 10, 26, 5, 6);
+    } else {
+      // Lunge — front legs extended forward, back legs pushed back
+      g.fillRect(cx - 18, 24, 5, 8);
+      g.fillRect(cx - 12, 26, 5, 7);
+      g.fillRect(cx + 8, 26, 5, 7);
+      g.fillRect(cx + 14, 24, 5, 8);
+    }
+
+    // Paws
+    const pawColor = this.getPawColor(bodyColor);
+    g.fillStyle(pawColor);
+    if (phase === 0) {
+      g.fillRoundedRect(cx - 13, 30, 7, 4, 2);
+      g.fillRoundedRect(cx - 7, 30, 7, 4, 2);
+      g.fillRoundedRect(cx + 3, 30, 7, 4, 2);
+      g.fillRoundedRect(cx + 9, 30, 7, 4, 2);
+    } else {
+      g.fillRoundedRect(cx - 19, 30, 7, 4, 2);
+      g.fillRoundedRect(cx - 13, 31, 7, 4, 2);
+      g.fillRoundedRect(cx + 7, 31, 7, 4, 2);
+      g.fillRoundedRect(cx + 13, 30, 7, 4, 2);
+    }
+
+    // Head — slightly lower in crouch, forward in lunge
+    const headX = phase === 0 ? cx - 8 : cx - 12;
+    const headY = phase === 0 ? 13 : 11;
+    g.fillStyle(bodyColor);
+    g.fillCircle(headX, headY, 10);
+
+    // Ears
+    g.fillStyle(earColor);
+    g.fillTriangle(headX - 8, headY - 4, headX - 4, headY - 10, headX, headY - 4);
+    g.fillTriangle(headX - 4, headY - 4, headX, headY - 10, headX + 4, headY - 4);
+    g.fillStyle(earInnerColor);
+    g.fillTriangle(headX - 7, headY - 4, headX - 4, headY - 8, headX - 1, headY - 4);
+    g.fillTriangle(headX - 3, headY - 4, headX, headY - 8, headX + 3, headY - 4);
+
+    // Eyes — narrowed/fierce
+    g.fillStyle(eyeColor);
+    g.fillEllipse(headX - 5, headY, 5, 3);
+    g.fillEllipse(headX + 1, headY, 5, 3);
+    g.fillStyle(0xffffff);
+    g.fillCircle(headX - 6, headY - 1, 1);
+    g.fillCircle(headX, headY - 1, 1);
+
+    // Nose
+    const noseColor = bodyColor === 0x222222 ? 0x333333 : 0xff69b4;
+    g.fillStyle(noseColor);
+    g.fillTriangle(headX - 3, headY + 2, headX - 1, headY + 2, headX - 2, headY + 3);
+  }
+
+  // Draw a cat in a dash pose — body stretched horizontally with speed lines
+  drawCatDash(g, bodyColor, earColor, earInnerColor, eyeColor) {
+    const cx = 24;
+
+    // Speed lines behind
+    g.lineStyle(1, 0xffffff, 0.5);
+    g.lineBetween(cx + 18, 14, cx + 26, 14);
+    g.lineBetween(cx + 16, 18, cx + 24, 18);
+    g.lineBetween(cx + 18, 22, cx + 26, 22);
+
+    // Tail — streaming behind
+    g.lineStyle(3, bodyColor);
+    g.lineBetween(cx + 14, 16, cx + 22, 12);
+
+    // Body — stretched long and low
+    g.fillStyle(bodyColor);
+    g.fillRoundedRect(cx - 18, 14, 34, 12, 4);
+
+    this.drawCharMarkings(g, bodyColor, cx, 14);
+
+    // Legs — extended far in running stride
+    g.fillStyle(bodyColor);
+    g.fillRect(cx - 16, 24, 4, 9);
+    g.fillRect(cx - 8, 26, 4, 7);
+    g.fillRect(cx + 6, 26, 4, 7);
+    g.fillRect(cx + 14, 24, 4, 9);
+
+    const pawColor = this.getPawColor(bodyColor);
+    g.fillStyle(pawColor);
+    g.fillRoundedRect(cx - 17, 31, 6, 4, 2);
+    g.fillRoundedRect(cx - 9, 31, 6, 4, 2);
+    g.fillRoundedRect(cx + 5, 31, 6, 4, 2);
+    g.fillRoundedRect(cx + 13, 31, 6, 4, 2);
+
+    // Head — forward and determined
+    g.fillStyle(bodyColor);
+    g.fillCircle(cx - 12, 12, 10);
+
+    // Ears — swept back
+    g.fillStyle(earColor);
+    g.fillTriangle(cx - 6, 8, cx - 2, 2, cx, 10);
+    g.fillTriangle(cx - 10, 8, cx - 6, 2, cx - 4, 10);
+    g.fillStyle(earInnerColor);
+    g.fillTriangle(cx - 6, 8, cx - 3, 4, cx - 1, 10);
+    g.fillTriangle(cx - 9, 8, cx - 6, 4, cx - 5, 10);
+
+    // Eyes — focused forward
+    g.fillStyle(eyeColor);
+    g.fillEllipse(cx - 17, 12, 5, 3);
+    g.fillEllipse(cx - 11, 12, 5, 3);
+    g.fillStyle(0xffffff);
+    g.fillCircle(cx - 18, 11, 1);
+    g.fillCircle(cx - 12, 11, 1);
+
+    const noseColor = bodyColor === 0x222222 ? 0x333333 : 0xff69b4;
+    g.fillStyle(noseColor);
+    g.fillTriangle(cx - 15, 14, cx - 13, 14, cx - 14, 15);
+  }
+
+  // Draw Boots in super sprint pose — extremely stretched with motion blur
+  drawCatSprint(g, bodyColor, earColor, earInnerColor, eyeColor, phase) {
+    const cx = 24;
+
+    // Heavy speed lines
+    g.lineStyle(2, 0xff8800, 0.4);
+    g.lineBetween(cx + 16, 12, cx + 28, 12);
+    g.lineBetween(cx + 14, 16, cx + 28, 16);
+    g.lineBetween(cx + 16, 20, cx + 28, 20);
+    g.lineBetween(cx + 14, 24, cx + 26, 24);
+
+    // Tail — streaming far behind
+    g.lineStyle(3, bodyColor);
+    g.lineBetween(cx + 14, 16, cx + 24, 10);
+    g.lineBetween(cx + 24, 10, cx + 28, 12);
+
+    // Body — very stretched
+    g.fillStyle(bodyColor);
+    g.fillRoundedRect(cx - 20, 14, 36, 12, 4);
+
+    this.drawCharMarkings(g, bodyColor, cx, 14);
+
+    // Legs — extreme stride alternating by phase
+    g.fillStyle(bodyColor);
+    if (phase === 0) {
+      g.fillRect(cx - 18, 24, 4, 9);
+      g.fillRect(cx - 6, 26, 4, 6);
+      g.fillRect(cx + 4, 26, 4, 6);
+      g.fillRect(cx + 14, 24, 4, 9);
+    } else if (phase === 1) {
+      g.fillRect(cx - 14, 26, 4, 6);
+      g.fillRect(cx - 4, 24, 4, 9);
+      g.fillRect(cx + 8, 24, 4, 9);
+      g.fillRect(cx + 16, 26, 4, 6);
+    } else {
+      g.fillRect(cx - 16, 25, 4, 8);
+      g.fillRect(cx - 2, 25, 4, 8);
+      g.fillRect(cx + 6, 25, 4, 8);
+      g.fillRect(cx + 16, 25, 4, 8);
+    }
+
+    const pawColor = this.getPawColor(bodyColor);
+    g.fillStyle(pawColor);
+    g.fillRoundedRect(cx - 19, 31, 6, 4, 2);
+    g.fillRoundedRect(cx - 7, 30, 6, 4, 2);
+    g.fillRoundedRect(cx + 3, 30, 6, 4, 2);
+    g.fillRoundedRect(cx + 13, 31, 6, 4, 2);
+
+    // Head
+    g.fillStyle(bodyColor);
+    g.fillCircle(cx - 14, 12, 10);
+
+    // Ears — swept back hard
+    g.fillStyle(earColor);
+    g.fillTriangle(cx - 8, 8, cx - 2, 4, cx, 12);
+    g.fillTriangle(cx - 12, 8, cx - 6, 4, cx - 4, 12);
+    g.fillStyle(earInnerColor);
+    g.fillTriangle(cx - 8, 9, cx - 3, 5, cx - 1, 11);
+    g.fillTriangle(cx - 11, 9, cx - 7, 5, cx - 5, 11);
+
+    // Eyes — squinting with determination
+    g.fillStyle(eyeColor);
+    g.fillEllipse(cx - 19, 12, 5, 2);
+    g.fillEllipse(cx - 13, 12, 5, 2);
+    g.fillStyle(0xffffff);
+    g.fillCircle(cx - 20, 11, 1);
+    g.fillCircle(cx - 14, 11, 1);
+
+    const noseColor = bodyColor === 0x222222 ? 0x333333 : 0xff69b4;
+    g.fillStyle(noseColor);
+    g.fillTriangle(cx - 17, 14, cx - 15, 14, cx - 16, 15);
+  }
+
+  // Draw Cleo in wall climbing pose — body vertical, claws gripping
+  drawCatClimb(g, bodyColor, earColor, earInnerColor, eyeColor, phase) {
+    const cx = 24;
+
+    // Body — oriented more vertically
+    g.fillStyle(bodyColor);
+    g.fillRoundedRect(cx - 8, 8, 16, 24, 4);
+
+    this.drawCharMarkings(g, bodyColor, cx, 10);
+
+    // Climbing legs — spread out gripping wall
+    g.fillStyle(bodyColor);
+    if (phase === 0) {
+      // Left paws gripping, right reaching
+      g.fillRect(cx - 16, 10, 8, 4);
+      g.fillRect(cx + 8, 14, 8, 4);
+      g.fillRect(cx - 16, 24, 8, 4);
+      g.fillRect(cx + 8, 28, 8, 4);
+    } else {
+      // Alternating grip
+      g.fillRect(cx - 16, 14, 8, 4);
+      g.fillRect(cx + 8, 10, 8, 4);
+      g.fillRect(cx - 16, 28, 8, 4);
+      g.fillRect(cx + 8, 24, 8, 4);
+    }
+
+    // Claw marks
+    g.lineStyle(1, 0xcccccc, 0.5);
+    if (phase === 0) {
+      g.lineBetween(cx - 17, 10, cx - 17, 14);
+      g.lineBetween(cx - 15, 10, cx - 15, 14);
+      g.lineBetween(cx + 16, 14, cx + 16, 18);
+    } else {
+      g.lineBetween(cx + 16, 10, cx + 16, 14);
+      g.lineBetween(cx + 14, 10, cx + 14, 14);
+      g.lineBetween(cx - 17, 28, cx - 17, 32);
+    }
+
+    // Tail — curled to the side for balance
+    g.lineStyle(3, bodyColor);
+    g.arc(cx + 10, 30, 6, Math.PI * 0.5, Math.PI * 1.5, true);
+
+    // Head — looking up
+    g.fillStyle(bodyColor);
+    g.fillCircle(cx, 6, 9);
+
+    // Ears — alert, pointing up
+    g.fillStyle(earColor);
+    g.fillTriangle(cx - 8, 2, cx - 4, -6, cx, 2);
+    g.fillTriangle(cx, 2, cx + 4, -6, cx + 8, 2);
+    g.fillStyle(earInnerColor);
+    g.fillTriangle(cx - 7, 2, cx - 4, -4, cx - 1, 2);
+    g.fillTriangle(cx + 1, 2, cx + 4, -4, cx + 7, 2);
+
+    // Eyes — looking up, wide and alert
+    g.fillStyle(eyeColor);
+    g.fillCircle(cx - 3, 4, 2.5);
+    g.fillCircle(cx + 3, 4, 2.5);
+    g.fillStyle(0x000000);
+    g.fillCircle(cx - 3, 3, 1);
+    g.fillCircle(cx + 3, 3, 1);
+    g.fillStyle(0xffffff);
+    g.fillCircle(cx - 4, 3, 1);
+    g.fillCircle(cx + 2, 3, 1);
+
+    const noseColor = bodyColor === 0x222222 ? 0x333333 : 0xff69b4;
+    g.fillStyle(noseColor);
+    g.fillTriangle(cx - 2, 7, cx, 7, cx - 1, 8);
+  }
+
+  // Draw Mochi in belly bounce pose — squished round body
+  drawCatBounce(g, bodyColor, earColor, earInnerColor, eyeColor, phase) {
+    const cx = 24;
+
+    if (phase === 0) {
+      // Charging/squish down — wide flat body, legs tucked
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(cx - 16, 18, 32, 12, 6);
+
+      this.drawCharMarkings(g, bodyColor, cx, 18);
+
+      // Tucked legs barely visible
+      g.fillStyle(bodyColor);
+      g.fillRect(cx - 10, 28, 5, 5);
+      g.fillRect(cx - 3, 29, 5, 4);
+      g.fillRect(cx + 4, 29, 5, 4);
+      g.fillRect(cx + 10, 28, 5, 5);
+
+      const pawColor = this.getPawColor(bodyColor);
+      g.fillStyle(pawColor);
+      g.fillRoundedRect(cx - 11, 31, 7, 4, 2);
+      g.fillRoundedRect(cx - 4, 31, 7, 4, 2);
+      g.fillRoundedRect(cx + 3, 31, 7, 4, 2);
+      g.fillRoundedRect(cx + 9, 31, 7, 4, 2);
+
+      // Head — pushed down
+      g.fillStyle(bodyColor);
+      g.fillCircle(cx - 6, 16, 10);
+
+      // Tail
+      g.lineStyle(3, bodyColor);
+      g.arc(cx + 16, 20, 6, Math.PI * 0.3, Math.PI * 1.7, true);
+    } else {
+      // Airborne — body round like a ball, legs splayed
+      g.fillStyle(bodyColor);
+      g.fillCircle(cx, 16, 14);
+
+      this.drawCharMarkings(g, bodyColor, cx, 8);
+
+      // Legs splayed outward
+      g.fillStyle(bodyColor);
+      g.fillRect(cx - 14, 24, 5, 7);
+      g.fillRect(cx - 6, 26, 5, 6);
+      g.fillRect(cx + 4, 26, 5, 6);
+      g.fillRect(cx + 12, 24, 5, 7);
+
+      const pawColor = this.getPawColor(bodyColor);
+      g.fillStyle(pawColor);
+      g.fillRoundedRect(cx - 15, 29, 7, 4, 2);
+      g.fillRoundedRect(cx - 7, 30, 7, 4, 2);
+      g.fillRoundedRect(cx + 3, 30, 7, 4, 2);
+      g.fillRoundedRect(cx + 11, 29, 7, 4, 2);
+
+      // Head — on top
+      g.fillStyle(bodyColor);
+      g.fillCircle(cx - 4, 6, 10);
+
+      // Tail curled
+      g.lineStyle(3, bodyColor);
+      g.arc(cx + 14, 10, 6, Math.PI * 0.5, Math.PI * 1.5, true);
+    }
+
+    // Ears (same position relative to head for both phases)
+    const headX = phase === 0 ? cx - 6 : cx - 4;
+    const headY = phase === 0 ? 16 : 6;
+    g.fillStyle(earColor);
+    g.fillTriangle(headX - 8, headY - 4, headX - 4, headY - 10, headX, headY - 4);
+    g.fillTriangle(headX - 4, headY - 4, headX, headY - 10, headX + 4, headY - 4);
+    g.fillStyle(earInnerColor);
+    g.fillTriangle(headX - 7, headY - 4, headX - 4, headY - 8, headX - 1, headY - 4);
+    g.fillTriangle(headX - 3, headY - 4, headX, headY - 8, headX + 3, headY - 4);
+
+    // Eyes — excited/surprised
+    g.fillStyle(eyeColor);
+    g.fillCircle(headX - 5, headY, 3);
+    g.fillCircle(headX + 1, headY, 3);
+    g.fillStyle(0xffffff);
+    g.fillCircle(headX - 6, headY - 1, 1.5);
+    g.fillCircle(headX, headY - 1, 1.5);
+
+    const noseColor = bodyColor === 0x222222 ? 0x333333 : 0xff69b4;
+    g.fillStyle(noseColor);
+    g.fillTriangle(headX - 3, headY + 2, headX - 1, headY + 2, headX - 2, headY + 3);
+  }
+
+  // Draw Luna with glowing night vision eyes
+  drawCatNightVision(g, bodyColor, earColor, earInnerColor, eyeColor) {
+    const cx = 24;
+
+    // Draw normal idle body
+    this.drawCatBody(g, bodyColor, earColor, earInnerColor, eyeColor, 0);
+
+    // Overlay glowing eyes on top — bright green glow
+    g.fillStyle(0x00ff00, 0.3);
+    g.fillCircle(cx - 11, 12, 6);
+    g.fillCircle(cx - 5, 12, 6);
+
+    g.fillStyle(0x44ff44);
+    g.fillCircle(cx - 11, 12, 3);
+    g.fillCircle(cx - 5, 12, 3);
+
+    g.fillStyle(0xaaffaa);
+    g.fillCircle(cx - 11, 12, 1.5);
+    g.fillCircle(cx - 5, 12, 1.5);
+  }
+
+  // Helper to get paw color based on body color
+  getPawColor(bodyColor) {
+    if (bodyColor === 0x1a1a1a) return 0xffffff;     // Boots — white paws
+    if (bodyColor === 0x222222) return 0x333333;       // Luna — dark paws
+    if (bodyColor === 0xf5deb3) return 0x8B6914;       // Cleo — brown paws
+    if (bodyColor === 0xeeeeee) return 0xffccaa;       // Mochi — peach paws
+    return 0xffd4a3;                                    // Whiskers — peach paws
+  }
+
+  // Helper to draw character-specific markings (stripes, patches, etc.)
+  drawCharMarkings(g, bodyColor, cx, bodyY) {
+    // Tuxedo white chest (Boots)
+    if (bodyColor === 0x1a1a1a) {
+      g.fillStyle(0xffffff);
+      g.fillRoundedRect(cx - 8, bodyY + 4, 10, 8, 3);
+    }
+    // Siamese dark mask (Cleo)
+    if (bodyColor === 0xf5deb3) {
+      g.fillStyle(0x8B6914, 0.4);
+      g.fillCircle(cx - 8, bodyY, 6);
+    }
+    // Calico patches (Mochi)
+    if (bodyColor === 0xeeeeee) {
+      g.fillStyle(0xff8c42, 0.6);
+      g.fillCircle(cx - 4, bodyY + 4, 5);
+      g.fillCircle(cx + 8, bodyY + 2, 4);
+      g.fillStyle(0x333333, 0.5);
+      g.fillCircle(cx + 2, bodyY + 8, 3);
+    }
+    // Tabby stripes (Whiskers)
+    if (bodyColor === 0xff8c42) {
+      g.lineStyle(2, 0xff6b1a, 0.5);
+      g.lineBetween(cx - 4, bodyY, cx - 4, bodyY + 12);
+      g.lineBetween(cx + 2, bodyY, cx + 2, bodyY + 12);
+      g.lineBetween(cx + 8, bodyY, cx + 8, bodyY + 12);
+    }
+  }
+
   // Generate 4 individual frame textures for a cat
   generateCatFrames(key, bodyColor, earColor, earInnerColor, eyeColor) {
     const frameW = 48, frameH = 40;
@@ -170,6 +590,25 @@ export class BootScene extends Phaser.Scene {
       g.generateTexture(`${key}_f${i}`, frameW, frameH);
       g.destroy();
     }
+  }
+
+  // Generate special move frame textures for a cat
+  generateSpecialFrames(key, bodyColor, earColor, earInnerColor, eyeColor) {
+    const frameW = 48, frameH = 40;
+
+    // Pounce frames (2): crouch + lunge
+    for (let i = 0; i < 2; i++) {
+      const g = this.add.graphics();
+      this.drawCatPounce(g, bodyColor, earColor, earInnerColor, eyeColor, i);
+      g.generateTexture(`${key}_pounce${i}`, frameW, frameH);
+      g.destroy();
+    }
+
+    // Dash frame (1)
+    const gd = this.add.graphics();
+    this.drawCatDash(gd, bodyColor, earColor, earInnerColor, eyeColor);
+    gd.generateTexture(`${key}_dash`, frameW, frameH);
+    gd.destroy();
   }
 
   createPlaceholderTextures() {
@@ -187,6 +626,44 @@ export class BootScene extends Phaser.Scene {
 
     // Mochi - fat calico cat (white/orange/brown patches)
     this.generateCatFrames('cat_mochi', 0xeeeeee, 0xdddddd, 0xffbbbb, 0x44aa44);
+
+    // Generate special move frames for all cats
+    this.generateSpecialFrames('cat_whiskers', 0xff8c42, 0xff6b1a, 0xffb3b3, 0x2d5a1e);
+    this.generateSpecialFrames('cat_luna', 0x222222, 0x111111, 0x663366, 0x44ff44);
+    this.generateSpecialFrames('cat_boots', 0x1a1a1a, 0x000000, 0xffaaaa, 0x4488ff);
+    this.generateSpecialFrames('cat_cleo', 0xf5deb3, 0x8B6914, 0xffcccc, 0x2266cc);
+    this.generateSpecialFrames('cat_mochi', 0xeeeeee, 0xdddddd, 0xffbbbb, 0x44aa44);
+
+    // Boots sprint frames (3)
+    const fw = 48, fh = 40;
+    for (let i = 0; i < 3; i++) {
+      const g = this.add.graphics();
+      this.drawCatSprint(g, 0x1a1a1a, 0x000000, 0xffaaaa, 0x4488ff, i);
+      g.generateTexture(`cat_boots_sprint${i}`, fw, fh);
+      g.destroy();
+    }
+
+    // Cleo climb frames (2)
+    for (let i = 0; i < 2; i++) {
+      const g = this.add.graphics();
+      this.drawCatClimb(g, 0xf5deb3, 0x8B6914, 0xffcccc, 0x2266cc, i);
+      g.generateTexture(`cat_cleo_climb${i}`, fw, fh);
+      g.destroy();
+    }
+
+    // Mochi bounce frames (2): squish + airborne
+    for (let i = 0; i < 2; i++) {
+      const g = this.add.graphics();
+      this.drawCatBounce(g, 0xeeeeee, 0xdddddd, 0xffbbbb, 0x44aa44, i);
+      g.generateTexture(`cat_mochi_bounce${i}`, fw, fh);
+      g.destroy();
+    }
+
+    // Luna night vision frame
+    const gnv = this.add.graphics();
+    this.drawCatNightVision(gnv, 0x222222, 0x111111, 0x663366, 0x44ff44);
+    gnv.generateTexture('cat_luna_nightvision', fw, fh);
+    gnv.destroy();
 
     // Create animations using individual frame textures
     this.anims.create({
@@ -263,6 +740,71 @@ export class BootScene extends Phaser.Scene {
       ],
       frameRate: 8,
       repeat: -1,
+    });
+
+    // ---- SPECIAL MOVE ANIMATIONS ----
+
+    // Pounce animations for all cats (crouch -> lunge)
+    const catNames = ['whiskers', 'luna', 'boots', 'cleo', 'mochi'];
+    catNames.forEach(name => {
+      this.anims.create({
+        key: `${name}_pounce`,
+        frames: [
+          { key: `cat_${name}_pounce0` },
+          { key: `cat_${name}_pounce1` },
+        ],
+        frameRate: 10,
+        repeat: 0,
+      });
+
+      this.anims.create({
+        key: `${name}_dash`,
+        frames: [{ key: `cat_${name}_dash` }],
+        frameRate: 1,
+        repeat: 0,
+      });
+    });
+
+    // Boots super sprint animation (3 frames, fast loop)
+    this.anims.create({
+      key: 'boots_sprint',
+      frames: [
+        { key: 'cat_boots_sprint0' },
+        { key: 'cat_boots_sprint1' },
+        { key: 'cat_boots_sprint2' },
+      ],
+      frameRate: 14,
+      repeat: -1,
+    });
+
+    // Cleo wall climb animation (2 frames alternating)
+    this.anims.create({
+      key: 'cleo_climb',
+      frames: [
+        { key: 'cat_cleo_climb0' },
+        { key: 'cat_cleo_climb1' },
+      ],
+      frameRate: 6,
+      repeat: -1,
+    });
+
+    // Mochi belly bounce animation (squish -> airborne)
+    this.anims.create({
+      key: 'mochi_bounce',
+      frames: [
+        { key: 'cat_mochi_bounce0' },
+        { key: 'cat_mochi_bounce1' },
+      ],
+      frameRate: 4,
+      repeat: 0,
+    });
+
+    // Luna night vision animation (glowing eyes idle)
+    this.anims.create({
+      key: 'luna_nightvision',
+      frames: [{ key: 'cat_luna_nightvision' }],
+      frameRate: 1,
+      repeat: 0,
     });
 
     // Tuna can

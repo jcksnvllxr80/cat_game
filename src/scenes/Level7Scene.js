@@ -225,7 +225,7 @@ export class Level7Scene extends Phaser.Scene {
     this.mapPieces = this.physics.add.group();
 
     // Tuna spread (20 positions)
-    const tunaX = [100, 300, 500, 750, 1000, 1250, 1500, 1750, 2100, 2350, 2600, 2900, 3200, 3500, 3800, 4100, 4500, 4900, 5300, 5700];
+    const tunaX = [750, 2600, 4100];
     tunaX.forEach(x => {
       const t = this.tunas.create(x, worldHeight - 90, 'tuna');
       t.body.setAllowGravity(false);
@@ -233,7 +233,7 @@ export class Level7Scene extends Phaser.Scene {
     });
 
     // Water (12 positions)
-    const waterX = [200, 600, 900, 1350, 1700, 2200, 2700, 3100, 3600, 4300, 4800, 5500];
+    const waterX = [600, 2200, 4300];
     waterX.forEach(x => {
       const w = this.waters.create(x, worldHeight - 85, 'water');
       w.body.setAllowGravity(false);
@@ -603,11 +603,14 @@ export class Level7Scene extends Phaser.Scene {
     this.nightVisionActive = !this.nightVisionActive;
 
     if (this.nightVisionActive) {
+      this.player.play('luna_nightvision');
       this.showQuickMessage("Night Vision ON!", 0x44ff44);
       this.player.setTint(0x44ff44);
       this.time.delayedCall(300, () => this.player.clearTint());
     } else {
       this.showQuickMessage("Night Vision OFF", 0xff8844);
+      const charName = this.playerState.activeChar || 'whiskers';
+      this.player.play(`${charName}_idle`, true);
     }
 
     this.updateDarknessOverlay();
@@ -662,11 +665,17 @@ export class Level7Scene extends Phaser.Scene {
     }
 
     this.showQuickMessage("BELLY BOUNCE!", 0xff8800);
+
+    // Play bounce animation then launch
+    this.player.play('mochi_bounce');
     this.player.setVelocityY(-700);
 
-    // Brief orange flash on player
+    // Orange flash effect
     this.player.setTint(0xff8800);
-    this.time.delayedCall(400, () => this.player.clearTint());
+    this.time.delayedCall(400, () => {
+      this.player.clearTint();
+      this.player.play('mochi_idle', true);
+    });
   }
 
   // ---- BOOTS SPRINT ABILITY ----
@@ -685,13 +694,15 @@ export class Level7Scene extends Phaser.Scene {
     this.sprintReady = false;
     this.showQuickMessage("SUPER SPRINT!", 0xff8800);
 
-    // Brief orange flash on player
+    // Play sprint animation
+    this.player.play('boots_sprint');
     this.player.setTint(0xff8800);
 
     // Sprint lasts 3 seconds
     this.time.delayedCall(3000, () => {
       this.sprintActive = false;
       this.player.clearTint();
+      this.player.play('boots_idle', true);
       this.showQuickMessage("Sprint ended", 0xffaa44);
     });
 
@@ -779,15 +790,30 @@ export class Level7Scene extends Phaser.Scene {
         strokeThickness: 3
       }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
 
-      const thanksText = this.add.text(512, 380, 'Thank you for playing!', {
+      const creditsText = this.add.text(512, 370, [
+        'Story by Gemma Watkins',
+        'Designer  Gemma Watkins',
+        'Programmer  Claude',
+        'Coordinator  Aaron Watkins',
+      ].join('\n'), {
         fontSize: '18px',
+        fontFamily: 'Georgia, serif',
+        color: '#cccccc',
+        align: 'center',
+        lineSpacing: 8,
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
+
+      const thanksText = this.add.text(512, 480, 'Thank you for playing!', {
+        fontSize: '16px',
         fontFamily: 'Arial, sans-serif',
         color: '#aaaaaa',
         stroke: '#000000',
         strokeThickness: 2
       }).setOrigin(0.5).setScrollFactor(0).setDepth(101);
 
-      const returnText = this.add.text(512, 450, 'Click anywhere to return to the title screen', {
+      const returnText = this.add.text(512, 530, 'Click anywhere to return to the title screen', {
         fontSize: '14px',
         fontFamily: 'Arial, sans-serif',
         color: '#888888',
@@ -798,16 +824,18 @@ export class Level7Scene extends Phaser.Scene {
       // Fade in the end screen
       endText.setAlpha(0);
       subtitleText.setAlpha(0);
+      creditsText.setAlpha(0);
       thanksText.setAlpha(0);
       returnText.setAlpha(0);
 
       this.tweens.add({ targets: endText, alpha: 1, duration: 1500, delay: 500 });
       this.tweens.add({ targets: subtitleText, alpha: 1, duration: 1500, delay: 1000 });
-      this.tweens.add({ targets: thanksText, alpha: 1, duration: 1500, delay: 1500 });
-      this.tweens.add({ targets: returnText, alpha: 1, duration: 1500, delay: 2500 });
+      this.tweens.add({ targets: creditsText, alpha: 1, duration: 2000, delay: 1800 });
+      this.tweens.add({ targets: thanksText, alpha: 1, duration: 1500, delay: 3500 });
+      this.tweens.add({ targets: returnText, alpha: 1, duration: 1500, delay: 4500 });
 
       // Click to return to title
-      this.time.delayedCall(3000, () => {
+      this.time.delayedCall(5000, () => {
         this.input.once('pointerdown', () => {
           this.sound.stopAll();
           this.scene.stop('UIScene');
@@ -1025,7 +1053,9 @@ export class Level7Scene extends Phaser.Scene {
     this.playerState.isPouncing = true;
     this.playerState.pounceReady = false;
 
-    this.player.setTint(0xffaa00);
+    // Visual feedback — play pounce animation
+    const activeChar = this.playerState.activeChar || 'whiskers';
+    this.player.play(`${activeChar}_pounce`);
     const pounceX = this.playerState.facingRight ? this.player.x + 30 : this.player.x - 30;
     const effect = this.add.image(pounceX, this.player.y + 10, 'pounce_effect');
     effect.setScale(1.5);
@@ -1075,6 +1105,8 @@ export class Level7Scene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
       this.player.clearTint();
       this.playerState.isPouncing = false;
+      const charName = this.playerState.activeChar || 'whiskers';
+      this.player.play(`${charName}_idle`, true);
     });
 
     this.time.delayedCall(this.playerState.pounceCooldown, () => {
@@ -1191,8 +1223,9 @@ export class Level7Scene extends Phaser.Scene {
     const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
     this.playerState.hunger = Math.min(100, this.playerState.hunger + 25);
+    this.playerState.health = Math.min(100, this.playerState.health + 8);
     this.playerState.tunasCollected++;
-    this.showQuickMessage("+25 Hunger!", 0x4a90d9);
+    this.showQuickMessage("+25 Hunger, +8 Health!", 0x4a90d9);
     this.collectEffect(tx, ty, 0x4a90d9);
     try { this.sound.play('tunapickup', { volume: 0.6 }); } catch(e) {}
   }
@@ -1201,8 +1234,9 @@ export class Level7Scene extends Phaser.Scene {
     const wx = water.x, wy = water.y;
     water.destroy();
     this.playerState.thirst = Math.min(100, this.playerState.thirst + 30);
+    this.playerState.health = Math.min(100, this.playerState.health + 2);
     this.playerState.watersCollected++;
-    this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
+    this.showQuickMessage("+30 Thirst, +2 Health!", 0x4fc3f7);
     this.collectEffect(wx, wy, 0x4fc3f7);
     try { this.sound.play('waterpickup', { volume: 0.6 }); } catch(e) {}
   }

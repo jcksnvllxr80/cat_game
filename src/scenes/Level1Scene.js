@@ -116,10 +116,7 @@ export class Level1Scene extends Phaser.Scene {
     this.pendants = this.physics.add.group();
 
     // Scatter tuna cans throughout the level
-    const tunaPositions = [
-      200, 450, 700, 950, 1150, 1350, 1550, 1750,
-      2000, 2400, 2650, 2900, 3100, 3400, 3600, 3800
-    ];
+    const tunaPositions = [700, 1800, 3000];
     tunaPositions.forEach(x => {
       const tuna = this.tunas.create(x, worldHeight - 90, 'tuna');
       tuna.body.setAllowGravity(false);
@@ -127,7 +124,7 @@ export class Level1Scene extends Phaser.Scene {
     });
 
     // Water bowls
-    const waterPositions = [350, 900, 1300, 1700, 2100, 2550, 3000, 3500];
+    const waterPositions = [400, 1400, 2500];
     waterPositions.forEach(x => {
       const w = this.waters.create(x, worldHeight - 85, 'water');
       w.body.setAllowGravity(false);
@@ -531,8 +528,9 @@ export class Level1Scene extends Phaser.Scene {
     this.playerState.isPouncing = true;
     this.playerState.pounceReady = false;
 
-    // Visual feedback
-    this.player.setTint(0xffaa00);
+    // Visual feedback — play pounce animation
+    const activeChar = this.playerState.activeChar || 'whiskers';
+    this.player.play(`${activeChar}_pounce`);
     const pounceX = this.playerState.facingRight ? this.player.x + 30 : this.player.x - 30;
     const effect = this.add.image(pounceX, this.player.y + 10, 'pounce_effect');
     effect.setScale(1.5);
@@ -590,6 +588,8 @@ export class Level1Scene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
       this.player.clearTint();
       this.playerState.isPouncing = false;
+      const charName = this.playerState.activeChar || 'whiskers';
+      this.player.play(`${charName}_idle`, true);
     });
 
     this.time.delayedCall(this.playerState.pounceCooldown, () => {
@@ -686,8 +686,9 @@ export class Level1Scene extends Phaser.Scene {
     const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
     this.playerState.hunger = Math.min(100, this.playerState.hunger + 25);
+    this.playerState.health = Math.min(100, this.playerState.health + 8);
     this.playerState.tunasCollected++;
-    this.showQuickMessage("+25 Hunger!", 0x4a90d9);
+    this.showQuickMessage("+25 Hunger, +8 Health!", 0x4a90d9);
     this.collectEffect(tx, ty, 0x4a90d9);
     try { this.sound.play('tunapickup', { volume: 0.6 }); } catch(e) {}
   }
@@ -696,8 +697,9 @@ export class Level1Scene extends Phaser.Scene {
     const wx = water.x, wy = water.y;
     water.destroy();
     this.playerState.thirst = Math.min(100, this.playerState.thirst + 30);
+    this.playerState.health = Math.min(100, this.playerState.health + 2);
     this.playerState.watersCollected++;
-    this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
+    this.showQuickMessage("+30 Thirst, +2 Health!", 0x4fc3f7);
     this.collectEffect(wx, wy, 0x4fc3f7);
     try { this.sound.play('waterpickup', { volume: 0.6 }); } catch(e) {}
   }

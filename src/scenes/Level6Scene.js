@@ -181,7 +181,7 @@ export class Level6Scene extends Phaser.Scene {
     this.mapPieces = this.physics.add.group();
 
     // Tuna spread (22 positions — plenty for the 5-tuna Mochi requirement)
-    const tunaX = [100, 280, 450, 650, 850, 1050, 1300, 1550, 1750, 1950, 2150, 2400, 2650, 2900, 3150, 3400, 3700, 3950, 4250, 4650, 4900, 5200];
+    const tunaX = [450, 1900, 3400];
     tunaX.forEach(x => {
       const t = this.tunas.create(x, worldHeight - 90, 'tuna');
       t.body.setAllowGravity(false);
@@ -189,7 +189,7 @@ export class Level6Scene extends Phaser.Scene {
     });
 
     // Water (12 positions)
-    const waterX = [200, 500, 900, 1250, 1650, 2050, 2500, 3000, 3350, 3800, 4400, 5100];
+    const waterX = [500, 1650, 3800];
     waterX.forEach(x => {
       const w = this.waters.create(x, worldHeight - 85, 'water');
       w.body.setAllowGravity(false);
@@ -551,11 +551,17 @@ export class Level6Scene extends Phaser.Scene {
     }
 
     this.showQuickMessage("BELLY BOUNCE!", 0xff8800);
+
+    // Play bounce animation then launch
+    this.player.play('mochi_bounce');
     this.player.setVelocityY(-700);
 
-    // Brief orange flash on player
+    // Orange flash effect
     this.player.setTint(0xff8800);
-    this.time.delayedCall(400, () => this.player.clearTint());
+    this.time.delayedCall(400, () => {
+      this.player.clearTint();
+      this.player.play('mochi_idle', true);
+    });
   }
 
   // ---- MOCHI RESCUE ----
@@ -741,10 +747,10 @@ export class Level6Scene extends Phaser.Scene {
     // Check Mochi rescue proximity
     if (!this.mochiRescued && this.mochiNpc && this.mochiNpc.active) {
       const distToMochi = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.mochiNpc.x, this.mochiNpc.y);
-      if (distToMochi < 60 && this.tunasThisLevel >= 5) {
+      if (distToMochi < 60 && this.tunasThisLevel >= 2) {
         this.rescueMochi();
-      } else if (distToMochi < 60 && this.tunasThisLevel < 5 && !this._mochiHintShown) {
-        this.showQuickMessage(`Mochi wants 5 tuna! (${this.tunasThisLevel}/5 collected)`, 0xffaa44);
+      } else if (distToMochi < 60 && this.tunasThisLevel < 2 && !this._mochiHintShown) {
+        this.showQuickMessage(`Mochi wants 2 tuna! (${this.tunasThisLevel}/2 collected)`, 0xffaa44);
         this._mochiHintShown = true;
         this.time.delayedCall(5000, () => { this._mochiHintShown = false; });
       }
@@ -815,7 +821,9 @@ export class Level6Scene extends Phaser.Scene {
     this.playerState.isPouncing = true;
     this.playerState.pounceReady = false;
 
-    this.player.setTint(0xffaa00);
+    // Visual feedback — play pounce animation
+    const activeChar = this.playerState.activeChar || 'whiskers';
+    this.player.play(`${activeChar}_pounce`);
     const pounceX = this.playerState.facingRight ? this.player.x + 30 : this.player.x - 30;
     const effect = this.add.image(pounceX, this.player.y + 10, 'pounce_effect');
     effect.setScale(1.5);
@@ -865,6 +873,8 @@ export class Level6Scene extends Phaser.Scene {
     this.time.delayedCall(200, () => {
       this.player.clearTint();
       this.playerState.isPouncing = false;
+      const charName = this.playerState.activeChar || 'whiskers';
+      this.player.play(`${charName}_idle`, true);
     });
 
     this.time.delayedCall(this.playerState.pounceCooldown, () => {
@@ -980,9 +990,10 @@ export class Level6Scene extends Phaser.Scene {
     const tx = tuna.x, ty = tuna.y;
     tuna.destroy();
     this.playerState.hunger = Math.min(100, this.playerState.hunger + 25);
+    this.playerState.health = Math.min(100, this.playerState.health + 8);
     this.playerState.tunasCollected++;
     this.tunasThisLevel++;
-    this.showQuickMessage("+25 Hunger!", 0x4a90d9);
+    this.showQuickMessage("+25 Hunger, +8 Health!", 0x4a90d9);
     this.collectEffect(tx, ty, 0x4a90d9);
     try { this.sound.play('tunapickup', { volume: 0.6 }); } catch(e) {}
   }
@@ -991,8 +1002,9 @@ export class Level6Scene extends Phaser.Scene {
     const wx = water.x, wy = water.y;
     water.destroy();
     this.playerState.thirst = Math.min(100, this.playerState.thirst + 30);
+    this.playerState.health = Math.min(100, this.playerState.health + 2);
     this.playerState.watersCollected++;
-    this.showQuickMessage("+30 Thirst!", 0x4fc3f7);
+    this.showQuickMessage("+30 Thirst, +2 Health!", 0x4fc3f7);
     this.collectEffect(wx, wy, 0x4fc3f7);
     try { this.sound.play('waterpickup', { volume: 0.6 }); } catch(e) {}
   }
