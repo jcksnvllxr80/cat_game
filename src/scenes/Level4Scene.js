@@ -85,14 +85,12 @@ export class Level4Scene extends Phaser.Scene {
       { x: 2600, y: 380, count: 2 },
       { x: 2840, y: 340, count: 4 },  // over pit
       { x: 3000, y: 280, count: 3 },
-      // Cleo cliff area — tall column of platforms with accessible entry steps
-      { x: 2980, y: 480, count: 2 },  // low step up from ground
-      { x: 3050, y: 420, count: 2 },  // mid step
-      { x: 3100, y: 360, count: 3 },
-      { x: 3150, y: 300, count: 2 },
-      { x: 3100, y: 240, count: 3 },
-      { x: 3150, y: 180, count: 2 },
-      { x: 3100, y: 120, count: 4 },  // Cleo's platform at top
+      // Cleo cliff area — staircase starts RIGHT of the vine roots (x>3300)
+      { x: 3350, y: 460, count: 3 },  // step 1
+      { x: 3390, y: 400, count: 3 },  // step 2
+      { x: 3430, y: 340, count: 3 },  // step 3
+      { x: 3470, y: 280, count: 3 },  // step 4
+      { x: 3510, y: 220, count: 4 },  // Cleo's platform at top
       { x: 3400, y: 360, count: 3 },
       { x: 3600, y: 300, count: 2 },
       { x: 3800, y: 240, count: 3 },
@@ -160,7 +158,7 @@ export class Level4Scene extends Phaser.Scene {
     this.vineRopeGraphics = vineRopeGraphics;
 
     // "Vine roots" label
-    this.add.text(3200, worldHeight - 120, '"Cut the vine roots!"', {
+    this.add.text(3200, worldHeight - 120, '"Cut the vine roots to free the cat above!"', {
       fontSize: '11px',
       fontFamily: 'Arial, sans-serif',
       color: '#44FF44',
@@ -170,14 +168,14 @@ export class Level4Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(15);
 
     // Cleo trapped on high cliff (tangled in vines)
-    this.cleoNpc = this.physics.add.staticImage(3200, 90, 'cat_whiskers_f0'); // placeholder texture
+    this.cleoNpc = this.physics.add.staticImage(3530, 190, 'cat_whiskers_f0'); // placeholder texture
     this.cleoNpc.setScale(1.5);
     this.cleoNpc.setTint(0xddccaa); // Siamese coloring hint
     this.cleoNpc.setDepth(1);
     if (this.cleoRescued) { this.cleoNpc.destroy(); }
 
     // Cleo cry for help text
-    this.cleoCryText = this.add.text(3200, 50, '"Help! I\'m tangled in these vines!"', {
+    this.cleoCryText = this.add.text(3530, 150, '"Help! I\'m tangled in these vines!"', {
       fontSize: '12px',
       fontFamily: 'Arial, sans-serif',
       color: '#FFDD88',

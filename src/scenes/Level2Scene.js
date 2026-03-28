@@ -196,8 +196,7 @@ export class Level2Scene extends Phaser.Scene {
     this.mapPiece.setScale(1.5);
     this.addFloatAnimation(this.mapPiece);
     this.addGlowEffect(this.mapPiece);
-    this.mapPiece.setVisible(false);  // Hidden until Night Vision reveals it
-    this.mapPiece.setData('hidden', true);
+    this.mapPiece.setData('hidden', false);
 
     // ---- Dark Zones ----
     // Areas that are pitch black without Luna's Night Vision
@@ -631,14 +630,7 @@ export class Level2Scene extends Phaser.Scene {
       }
     });
 
-    // Map piece visibility
-    if (this.mapPiece && this.mapPiece.active) {
-      if (visible) {
-        this.mapPiece.setVisible(true);
-      } else {
-        this.mapPiece.setVisible(false);
-      }
-    }
+    // Map piece is always visible (night vision does not hide/show it)
   }
 
   // ---- BOULDER PUZZLE ----
