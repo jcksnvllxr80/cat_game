@@ -10,6 +10,7 @@ import { Level6Scene } from './scenes/Level6Scene.js';
 import { Level7Scene } from './scenes/Level7Scene.js';
 import { UIScene } from './scenes/UIScene.js';
 import { DialogScene } from './scenes/DialogScene.js';
+import { PauseScene } from './scenes/PauseScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -24,7 +25,7 @@ const config = {
       debug: false
     }
   },
-  scene: [BootScene, TitleScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, UIScene, DialogScene],
+  scene: [BootScene, TitleScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, UIScene, DialogScene, PauseScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH

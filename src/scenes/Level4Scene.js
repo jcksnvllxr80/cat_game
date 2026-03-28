@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PIT_THRESHOLD } from '../constants.js';
 
 export class Level4Scene extends Phaser.Scene {
   constructor() {
@@ -363,6 +364,10 @@ export class Level4Scene extends Phaser.Scene {
     this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.keyShift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.keyTab = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+
+    // ---- Pause menu ----
+    this.input.keyboard.on('keydown-ESC', () => this.openPause());
+    this.input.keyboard.on('keydown-P', () => this.openPause());
 
     // ---- Camera ----
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -830,9 +835,9 @@ export class Level4Scene extends Phaser.Scene {
     });
 
     // Fall into pit
-    if (this.player.y > 560 && !this.player.getData('pitCooldown')) {
+    if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
-      this.loseLife("Fell in a pit!", Math.max(100, this.player.x - 100), 400);
+      this.loseLife("Fell in a pit!");
     }
   }
 
@@ -960,7 +965,7 @@ export class Level4Scene extends Phaser.Scene {
 
     this.playerState.health = Math.max(0, this.playerState.health - 10);
     if (this.playerState.health <= 0) {
-      this.loseLife("KO'd by enemy!", player.x, player.y);
+      this.loseLife("KO'd by enemy!");
       return;
     }
     this.events.emit('updateVitals', this.playerState);
@@ -987,32 +992,22 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  loseLife(message, respawnX, respawnY) {
-    respawnX = respawnX || 100;
-    respawnY = respawnY || 400;
-    this.playerState.lives = Math.max(0, (this.playerState.lives || 1) - 1);
-    this.playerState.health = this.playerState.maxHealth;
-    this.player.setPosition(respawnX, respawnY);
-    this.player.setVelocity(0, 0);
-    this.player.setData('invulnerable', true);
-    this.player.setTint(0xff4444);
-    this.tweens.add({
-      targets: this.player,
-      alpha: 0.3,
-      duration: 100,
-      yoyo: true,
-      repeat: 5,
-      onComplete: () => {
-        this.player.setAlpha(1);
-        this.player.clearTint();
-        this.player.setData('invulnerable', false);
-        this.player.setData('pitCooldown', false);
-      }
+  openPause() {
+    this.scene.pause();
+    this.scene.launch('PauseScene', { callerScene: 'Level4Scene' });
+  }
+
+  loseLife(message) {
+    if (this.player.getData('dyingCooldown')) return;
+    this.player.setData('dyingCooldown', true);
+    this.playerState.lives = Math.max(0, (this.playerState.lives || 3) - 1);
+    this.playerState.health = 100;
+    this.showQuickMessage(`${message} Restarting...`, 0xff4444);
+    this.cameras.main.fadeOut(1000, 0, 0, 0);
+    this.time.delayedCall(1100, () => {
+      this.scene.stop('UIScene');
+      this.scene.restart({ playerState: this.playerState });
     });
-    if (this.playerState.lives > 0) {
-      this.showQuickMessage(`${message} Lives: ${this.playerState.lives} left!`, 0xff4444);
-    }
-    this.events.emit('updateVitals', this.playerState);
   }
 
   collectTuna(player, tuna) {
@@ -1040,6 +1035,7 @@ export class Level4Scene extends Phaser.Scene {
   collectMapPiece(player, piece) {
     const px = piece.x, py = piece.y;
     piece.destroy();
+    try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
     this.showQuickMessage("MAP PIECE FOUND! (4/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
