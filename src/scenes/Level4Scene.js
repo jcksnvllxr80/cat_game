@@ -84,12 +84,14 @@ export class Level4Scene extends Phaser.Scene {
       { x: 2600, y: 380, count: 2 },
       { x: 2840, y: 340, count: 4 },  // over pit
       { x: 3000, y: 280, count: 3 },
-      // Cleo cliff area — tall column of platforms
-      { x: 3100, y: 400, count: 3 },
-      { x: 3150, y: 340, count: 2 },
-      { x: 3100, y: 280, count: 3 },
-      { x: 3150, y: 220, count: 2 },
-      { x: 3100, y: 160, count: 4 },  // Cleo's platform at top
+      // Cleo cliff area — tall column of platforms with accessible entry steps
+      { x: 2980, y: 480, count: 2 },  // low step up from ground
+      { x: 3050, y: 420, count: 2 },  // mid step
+      { x: 3100, y: 360, count: 3 },
+      { x: 3150, y: 300, count: 2 },
+      { x: 3100, y: 240, count: 3 },
+      { x: 3150, y: 180, count: 2 },
+      { x: 3100, y: 120, count: 4 },  // Cleo's platform at top
       { x: 3400, y: 360, count: 3 },
       { x: 3600, y: 300, count: 2 },
       { x: 3800, y: 240, count: 3 },
@@ -167,13 +169,13 @@ export class Level4Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(15);
 
     // Cleo trapped on high cliff (tangled in vines)
-    this.cleoNpc = this.physics.add.staticImage(3200, 150, 'cat_whiskers_f0'); // placeholder texture
+    this.cleoNpc = this.physics.add.staticImage(3200, 90, 'cat_whiskers_f0'); // placeholder texture
     this.cleoNpc.setScale(1.5);
     this.cleoNpc.setTint(0xddccaa); // Siamese coloring hint
     this.cleoNpc.setDepth(1);
 
     // Cleo cry for help text
-    this.cleoCryText = this.add.text(3200, 110, '"Help! I\'m tangled in these vines!"', {
+    this.cleoCryText = this.add.text(3200, 50, '"Help! I\'m tangled in these vines!"', {
       fontSize: '12px',
       fontFamily: 'Arial, sans-serif',
       color: '#FFDD88',
@@ -232,7 +234,7 @@ export class Level4Scene extends Phaser.Scene {
     });
 
     // Map piece 4/7 — at the canyon summit (very high platform)
-    this.mapPiece = this.mapPieces.create(5500, 100, 'map_piece');
+    this.mapPiece = this.mapPieces.create(5500, 30, 'map_piece');
     this.mapPiece.body.setAllowGravity(false);
     this.mapPiece.setScale(1.5);
     this.addFloatAnimation(this.mapPiece);

@@ -761,6 +761,9 @@ export class Level7Scene extends Phaser.Scene {
     this.cameras.main.fadeOut(2000, 0, 0, 0);
 
     this.time.delayedCall(2500, () => {
+      // Clear the camera fade so the end screen is visible
+      this.cameras.main.resetFX();
+
       // Play victory music
       this.sound.stopAll();
       this.sound.play('victory', { loop: false, volume: 0.5 });
