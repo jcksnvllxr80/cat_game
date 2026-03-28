@@ -30,7 +30,7 @@ export class Level3Scene extends Phaser.Scene {
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
-    this.bootsRescued = false;
+    this.bootsRescued = (data.playerState?.party || []).includes('boots');
     this.sprintActive = false;
     this.sprintReady = true;
   }
@@ -193,6 +193,7 @@ export class Level3Scene extends Phaser.Scene {
     this.bootsNpc = this.physics.add.staticImage(2750, 388, 'cat_boots_f0');
     this.bootsNpc.setScale(1.5);
     this.bootsNpc.setDepth(10);
+    if (this.bootsRescued) { this.bootsNpc.destroy(); }
 
     // Boots cry for help text
     this.bootsCryText = this.add.text(2750, 340, '"Hey! Over here! I\'m stuck!"', {

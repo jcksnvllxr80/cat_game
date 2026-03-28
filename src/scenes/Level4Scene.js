@@ -30,7 +30,7 @@ export class Level4Scene extends Phaser.Scene {
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna', 'boots'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
-    this.cleoRescued = false;
+    this.cleoRescued = (data.playerState?.party || []).includes('cleo');
     this.vinesCut = 0;
   }
 
@@ -174,6 +174,7 @@ export class Level4Scene extends Phaser.Scene {
     this.cleoNpc.setScale(1.5);
     this.cleoNpc.setTint(0xddccaa); // Siamese coloring hint
     this.cleoNpc.setDepth(1);
+    if (this.cleoRescued) { this.cleoNpc.destroy(); }
 
     // Cleo cry for help text
     this.cleoCryText = this.add.text(3200, 50, '"Help! I\'m tangled in these vines!"', {

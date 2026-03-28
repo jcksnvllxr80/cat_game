@@ -30,7 +30,7 @@ export class Level6Scene extends Phaser.Scene {
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna', 'boots', 'cleo'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
-    this.mochiRescued = false;
+    this.mochiRescued = (data.playerState?.party || []).includes('mochi');
     this.tunasThisLevel = 0;
   }
 
@@ -208,6 +208,7 @@ export class Level6Scene extends Phaser.Scene {
     this.mochiNpc = this.physics.add.staticImage(4200, worldHeight - 60, 'cat_mochi_f0');
     this.mochiNpc.setScale(1.5);
     this.mochiNpc.setDepth(10);
+    if (this.mochiRescued) { this.mochiNpc.destroy(); }
 
     // Mochi snoring text
     this.mochiCryText = this.add.text(4200, worldHeight - 110, '"Zzzzz... so cozy..."', {

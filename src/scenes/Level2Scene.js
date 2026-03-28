@@ -30,7 +30,7 @@ export class Level2Scene extends Phaser.Scene {
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
-    this.lunaRescued = false;
+    this.lunaRescued = (data.playerState?.party || []).includes('luna');
     this.nightVisionActive = false;
   }
 
@@ -120,6 +120,7 @@ export class Level2Scene extends Phaser.Scene {
     this.lunaNpc.setScale(1.5);
     this.lunaNpc.setAlpha(0.4);  // barely visible behind rocks
     this.lunaNpc.setDepth(1);
+    if (this.lunaRescued) { this.lunaNpc.destroy(); }
 
     // Luna cry for help text
     this.lunaCryText = this.add.text(960, worldHeight - 150, '"Help! Is someone there?!"', {
