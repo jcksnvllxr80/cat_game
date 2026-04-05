@@ -27,6 +27,7 @@ export class Level2Scene extends Phaser.Scene {
       lives: 9,
       isExhausted: false,
     };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
@@ -101,44 +102,48 @@ export class Level2Scene extends Phaser.Scene {
     this.boulders = this.physics.add.staticGroup();
     this.boulderData = [];
 
-    const boulderPositions = [
-      { x: 920, y: worldHeight - 80, order: 1 },
-      { x: 960, y: worldHeight - 80, order: 2 },
-      { x: 940, y: worldHeight - 115, order: 3 },
-    ];
+    if (!this.lunaRescued) {
+      const boulderPositions = [
+        { x: 920, y: worldHeight - 80, order: 1 },
+        { x: 960, y: worldHeight - 80, order: 2 },
+        { x: 940, y: worldHeight - 115, order: 3 },
+      ];
 
-    boulderPositions.forEach(pos => {
-      const b = this.boulders.create(pos.x, pos.y, 'boulder');
-      b.setScale(1.2);
-      b.setData('order', pos.order);
-      b.setData('health', 3);
-      this.boulderData.push(b);
-    });
+      boulderPositions.forEach(pos => {
+        const b = this.boulders.create(pos.x, pos.y, 'boulder');
+        b.setScale(1.2);
+        b.setData('order', pos.order);
+        b.setData('health', 3);
+        this.boulderData.push(b);
+      });
 
-    // Luna trapped behind boulders (initially hidden/behind)
-    this.lunaNpc = this.physics.add.staticImage(980, worldHeight - 75, 'cat_luna_f0');
-    this.lunaNpc.setScale(1.5);
-    this.lunaNpc.setAlpha(0.4);  // barely visible behind rocks
-    this.lunaNpc.setDepth(1);
-    if (this.lunaRescued) { this.lunaNpc.destroy(); }
+      // Luna trapped behind boulders (initially hidden/behind)
+      this.lunaNpc = this.physics.add.staticImage(980, worldHeight - 75, 'cat_luna_f0');
+      this.lunaNpc.setScale(1.5);
+      this.lunaNpc.setAlpha(0.4);  // barely visible behind rocks
+      this.lunaNpc.setDepth(1);
 
-    // Luna cry for help text
-    this.lunaCryText = this.add.text(960, worldHeight - 150, '"Help! Is someone there?!"', {
-      fontSize: '12px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#AA88FF',
-      fontStyle: 'italic',
-      stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(15);
+      // Luna cry for help text
+      this.lunaCryText = this.add.text(960, worldHeight - 150, '"Help! Is someone there?!"', {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#AA88FF',
+        fontStyle: 'italic',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setDepth(15);
 
-    this.tweens.add({
-      targets: this.lunaCryText,
-      alpha: 0.3,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1
-    });
+      this.tweens.add({
+        targets: this.lunaCryText,
+        alpha: 0.3,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1
+      });
+    } else {
+      this.lunaNpc = null;
+      this.lunaCryText = null;
+    }
 
     // Breakable crates
     const cratePositions = [
@@ -191,12 +196,16 @@ export class Level2Scene extends Phaser.Scene {
     });
 
     // Map piece 2 — inside the Great Tree (far end, hidden path area)
-    this.mapPiece = this.mapPieces.create(4500, 220, 'map_piece');
-    this.mapPiece.body.setAllowGravity(false);
-    this.mapPiece.setScale(1.5);
-    this.addFloatAnimation(this.mapPiece);
-    this.addGlowEffect(this.mapPiece);
-    this.mapPiece.setData('hidden', false);
+    if (!this.playerState.collectedMapPieces.Level2Scene) {
+      this.mapPiece = this.mapPieces.create(4500, 160, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+      this.mapPiece.setData('hidden', false);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- Dark Zones ----
     // Areas that are pitch black without Luna's Night Vision
@@ -996,9 +1005,16 @@ export class Level2Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
     enemy.setTint(0xffaaaa);
     this.tweens.add({
       targets: enemy,
@@ -1012,6 +1028,7 @@ export class Level2Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -1094,6 +1111,7 @@ export class Level2Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level2Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (2/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
@@ -1234,6 +1252,10 @@ export class Level2Scene extends Phaser.Scene {
 
   exitLevel() {
     if (this.hasExited) return;
+    if (this.mapPiece?.active) {
+      this.showQuickMessage("Find this level's map piece before leaving!", 0xff4444);
+      return;
+    }
     this.hasExited = true;
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to Tuna Bay Docks...", 0x44ff44);

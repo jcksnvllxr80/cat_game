@@ -27,6 +27,7 @@ export class Level4Scene extends Phaser.Scene {
       lives: 9,
       isExhausted: false,
     };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna', 'boots'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
@@ -102,10 +103,10 @@ export class Level4Scene extends Phaser.Scene {
       { x: 5000, y: 300, count: 4 },
       { x: 5220, y: 350, count: 4 },  // over pit
       // Summit area — very high platforms
-      { x: 5400, y: 280, count: 3 },
-      { x: 5450, y: 200, count: 2 },
-      { x: 5400, y: 140, count: 3 },
-      { x: 5450, y: 80, count: 4 },   // summit platform (map piece)
+      { x: 5280, y: 320, count: 3 },
+      { x: 5380, y: 250, count: 3 },
+      { x: 5480, y: 180, count: 3 },
+      { x: 5580, y: 110, count: 4 },   // summit platform (map piece)
     ];
 
     floats.forEach(p => {
@@ -134,63 +135,68 @@ export class Level4Scene extends Phaser.Scene {
     this.vines = this.physics.add.staticGroup();
     this.vineData = [];
 
-    const vinePositions = [
-      { x: 3100, y: worldHeight - 80 },
-      { x: 3200, y: worldHeight - 80 },
-      { x: 3300, y: worldHeight - 80 },
-    ];
+    if (!this.cleoRescued) {
+      const vinePositions = [
+        { x: 3100, y: worldHeight - 80 },
+        { x: 3200, y: worldHeight - 80 },
+        { x: 3300, y: worldHeight - 80 },
+      ];
 
-    vinePositions.forEach(pos => {
-      const v = this.vines.create(pos.x, pos.y, 'crate'); // using crate as vine root placeholder
-      v.setTint(0x44aa44);
-      v.setScale(0.8);
-      v.setData('health', 2);
-      this.vineData.push(v);
-    });
+      vinePositions.forEach(pos => {
+        const v = this.vines.create(pos.x, pos.y, 'crate'); // using crate as vine root placeholder
+        v.setTint(0x44aa44);
+        v.setScale(0.8);
+        v.setData('health', 2);
+        this.vineData.push(v);
+      });
 
-    // Vine visual indicators (ropes going up to Cleo)
-    const vineRopeGraphics = this.add.graphics();
-    vineRopeGraphics.setDepth(2);
-    vineRopeGraphics.lineStyle(3, 0x228822, 0.6);
-    vinePositions.forEach(pos => {
-      vineRopeGraphics.lineBetween(pos.x, pos.y - 20, pos.x + Phaser.Math.Between(-20, 20), 150);
-    });
-    this.vineRopeGraphics = vineRopeGraphics;
+      // Vine visual indicators (ropes going up to Cleo)
+      const vineRopeGraphics = this.add.graphics();
+      vineRopeGraphics.setDepth(2);
+      vineRopeGraphics.lineStyle(3, 0x228822, 0.6);
+      vinePositions.forEach(pos => {
+        vineRopeGraphics.lineBetween(pos.x, pos.y - 20, pos.x + Phaser.Math.Between(-20, 20), 150);
+      });
+      this.vineRopeGraphics = vineRopeGraphics;
 
-    // "Vine roots" label
-    this.add.text(3200, worldHeight - 120, '"Cut the vine roots to free the cat above!"', {
-      fontSize: '11px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#44FF44',
-      fontStyle: 'italic',
-      stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(15);
+      // "Vine roots" label
+      this.add.text(3200, worldHeight - 120, '"Cut the vine roots to free the cat above!"', {
+        fontSize: '11px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#44FF44',
+        fontStyle: 'italic',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setDepth(15);
 
-    // Cleo trapped on high cliff (tangled in vines)
-    this.cleoNpc = this.physics.add.staticImage(3530, 190, 'cat_whiskers_f0'); // placeholder texture
-    this.cleoNpc.setScale(1.5);
-    this.cleoNpc.setTint(0xddccaa); // Siamese coloring hint
-    this.cleoNpc.setDepth(1);
-    if (this.cleoRescued) { this.cleoNpc.destroy(); }
+      // Cleo trapped on high cliff (tangled in vines)
+      this.cleoNpc = this.physics.add.staticImage(3530, 190, 'cat_whiskers_f0'); // placeholder texture
+      this.cleoNpc.setScale(1.5);
+      this.cleoNpc.setTint(0xddccaa); // Siamese coloring hint
+      this.cleoNpc.setDepth(1);
 
-    // Cleo cry for help text
-    this.cleoCryText = this.add.text(3530, 150, '"Help! I\'m tangled in these vines!"', {
-      fontSize: '12px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#FFDD88',
-      fontStyle: 'italic',
-      stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(15);
+      // Cleo cry for help text
+      this.cleoCryText = this.add.text(3530, 150, '"Help! I\'m tangled in these vines!"', {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#FFDD88',
+        fontStyle: 'italic',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setDepth(15);
 
-    this.tweens.add({
-      targets: this.cleoCryText,
-      alpha: 0.3,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1
-    });
+      this.tweens.add({
+        targets: this.cleoCryText,
+        alpha: 0.3,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1
+      });
+    } else {
+      this.vineRopeGraphics = null;
+      this.cleoNpc = null;
+      this.cleoCryText = null;
+    }
 
     // ---- Decorative canyon elements ----
     this.createCanyonDecor(worldWidth, worldHeight);
@@ -234,11 +240,15 @@ export class Level4Scene extends Phaser.Scene {
     });
 
     // Map piece 4/7 — at the canyon summit (very high platform)
-    this.mapPiece = this.mapPieces.create(5500, 30, 'map_piece');
-    this.mapPiece.body.setAllowGravity(false);
-    this.mapPiece.setScale(1.5);
-    this.addFloatAnimation(this.mapPiece);
-    this.addGlowEffect(this.mapPiece);
+    if (!this.playerState.collectedMapPieces.Level4Scene) {
+      this.mapPiece = this.mapPieces.create(5630, 60, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- NPCs ----
     this.npcs = this.physics.add.staticGroup();
@@ -940,9 +950,16 @@ export class Level4Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
     enemy.setTint(0xffaaaa);
     this.tweens.add({
       targets: enemy,
@@ -956,6 +973,7 @@ export class Level4Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -1036,6 +1054,7 @@ export class Level4Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level4Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (4/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
@@ -1175,6 +1194,10 @@ export class Level4Scene extends Phaser.Scene {
 
   exitLevel() {
     if (this.hasExited) return;
+    if (this.mapPiece?.active) {
+      this.showQuickMessage("Find this level's map piece before leaving!", 0xff4444);
+      return;
+    }
     this.hasExited = true;
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to The Yarn Factory...", 0x44ff44);

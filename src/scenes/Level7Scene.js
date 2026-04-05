@@ -27,6 +27,7 @@ export class Level7Scene extends Phaser.Scene {
       lives: 9,
       isExhausted: false,
     };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna', 'boots', 'cleo', 'mochi'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
@@ -242,11 +243,15 @@ export class Level7Scene extends Phaser.Scene {
     });
 
     // Map piece 7/7 — just inside the gates area, on a high platform
-    this.mapPiece = this.mapPieces.create(2000, 300, 'map_piece');
-    this.mapPiece.body.setAllowGravity(false);
-    this.mapPiece.setScale(1.5);
-    this.addFloatAnimation(this.mapPiece);
-    this.addGlowEffect(this.mapPiece);
+    if (!this.playerState.collectedMapPieces.Level7Scene) {
+      this.mapPiece = this.mapPieces.create(2000, 300, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- NPCs ----
     this.npcs = this.physics.add.staticGroup();
@@ -1147,9 +1152,16 @@ export class Level7Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
     enemy.setTint(0xffaaaa);
     this.tweens.add({
       targets: enemy,
@@ -1163,6 +1175,7 @@ export class Level7Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -1244,6 +1257,7 @@ export class Level7Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level7Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (7/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 

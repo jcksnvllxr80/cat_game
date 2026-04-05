@@ -27,6 +27,7 @@ export class Level3Scene extends Phaser.Scene {
       lives: 9,
       isExhausted: false,
     };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
@@ -183,35 +184,43 @@ export class Level3Scene extends Phaser.Scene {
     });
 
     // Map piece 3/7 — near the sunken ship area
-    this.mapPiece = this.mapPieces.create(5000, 200, 'map_piece');
-    this.mapPiece.body.setAllowGravity(false);
-    this.mapPiece.setScale(1.5);
-    this.addFloatAnimation(this.mapPiece);
-    this.addGlowEffect(this.mapPiece);
+    if (!this.playerState.collectedMapPieces.Level3Scene) {
+      this.mapPiece = this.mapPieces.create(5000, 200, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- Boots NPC (stranded on island) ----
-    this.bootsNpc = this.physics.add.staticImage(2750, 388, 'cat_boots_f0');
-    this.bootsNpc.setScale(1.5);
-    this.bootsNpc.setDepth(10);
-    if (this.bootsRescued) { this.bootsNpc.destroy(); }
+    if (!this.bootsRescued) {
+      this.bootsNpc = this.physics.add.staticImage(2750, 388, 'cat_boots_f0');
+      this.bootsNpc.setScale(1.5);
+      this.bootsNpc.setDepth(10);
 
-    // Boots cry for help text
-    this.bootsCryText = this.add.text(2750, 340, '"Hey! Over here! I\'m stuck!"', {
-      fontSize: '12px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#FF8844',
-      fontStyle: 'italic',
-      stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(15);
+      // Boots cry for help text
+      this.bootsCryText = this.add.text(2750, 340, '"Hey! Over here! I\'m stuck!"', {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#FF8844',
+        fontStyle: 'italic',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setDepth(15);
 
-    this.tweens.add({
-      targets: this.bootsCryText,
-      alpha: 0.3,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1
-    });
+      this.tweens.add({
+        targets: this.bootsCryText,
+        alpha: 0.3,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1
+      });
+    } else {
+      this.bootsNpc = null;
+      this.bootsCryText = null;
+    }
 
     // ---- NPCs ----
     this.npcs = this.physics.add.staticGroup();
@@ -870,9 +879,16 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
     enemy.setTint(0xffaaaa);
     this.tweens.add({
       targets: enemy,
@@ -886,6 +902,7 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -966,6 +983,7 @@ export class Level3Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level3Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (3/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
@@ -1108,6 +1126,10 @@ export class Level3Scene extends Phaser.Scene {
 
   exitLevel() {
     if (this.hasExited) return;
+    if (this.mapPiece?.active) {
+      this.showQuickMessage("Find this level's map piece before leaving!", 0xff4444);
+      return;
+    }
     this.hasExited = true;
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to Catnip Canyon...", 0x44ff44);

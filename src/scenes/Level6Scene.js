@@ -27,6 +27,7 @@ export class Level6Scene extends Phaser.Scene {
       lives: 9,
       isExhausted: false,
     };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
     // Party & switching state
     this.playerState.party = this.playerState.party || ['whiskers', 'luna', 'boots', 'cleo'];
     this.playerState.activeChar = this.playerState.activeChar || 'whiskers';
@@ -198,35 +199,43 @@ export class Level6Scene extends Phaser.Scene {
     });
 
     // Map piece 6/7 — in ice cave area, high platform reachable with Mochi's Belly Bounce
-    this.mapPiece = this.mapPieces.create(5800, 150, 'map_piece');
-    this.mapPiece.body.setAllowGravity(false);
-    this.mapPiece.setScale(1.5);
-    this.addFloatAnimation(this.mapPiece);
-    this.addGlowEffect(this.mapPiece);
+    if (!this.playerState.collectedMapPieces.Level6Scene) {
+      this.mapPiece = this.mapPieces.create(5800, 150, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- Mochi NPC (stuck in a hole in the snow) ----
-    this.mochiNpc = this.physics.add.staticImage(4200, worldHeight - 60, 'cat_mochi_f0');
-    this.mochiNpc.setScale(1.5);
-    this.mochiNpc.setDepth(10);
-    if (this.mochiRescued) { this.mochiNpc.destroy(); }
+    if (!this.mochiRescued) {
+      this.mochiNpc = this.physics.add.staticImage(4200, worldHeight - 60, 'cat_mochi_f0');
+      this.mochiNpc.setScale(1.5);
+      this.mochiNpc.setDepth(10);
 
-    // Mochi snoring text
-    this.mochiCryText = this.add.text(4200, worldHeight - 110, '"Zzzzz... so cozy..."', {
-      fontSize: '12px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#FFAA88',
-      fontStyle: 'italic',
-      stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(15);
+      // Mochi snoring text
+      this.mochiCryText = this.add.text(4200, worldHeight - 110, '"Zzzzz... so cozy..."', {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#FFAA88',
+        fontStyle: 'italic',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5).setDepth(15);
 
-    this.tweens.add({
-      targets: this.mochiCryText,
-      alpha: 0.3,
-      duration: 1500,
-      yoyo: true,
-      repeat: -1
-    });
+      this.tweens.add({
+        targets: this.mochiCryText,
+        alpha: 0.3,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1
+      });
+    } else {
+      this.mochiNpc = null;
+      this.mochiCryText = null;
+    }
 
     // ---- NPCs ----
     this.npcs = this.physics.add.staticGroup();
@@ -913,9 +922,16 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
     enemy.setTint(0xffaaaa);
     this.tweens.add({
       targets: enemy,
@@ -929,6 +945,7 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -1010,6 +1027,7 @@ export class Level6Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level6Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (6/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
@@ -1150,6 +1168,10 @@ export class Level6Scene extends Phaser.Scene {
 
   exitLevel() {
     if (this.hasExited) return;
+    if (this.mapPiece?.active) {
+      this.showQuickMessage("Find this level's map piece before leaving!", 0xff4444);
+      return;
+    }
     this.hasExited = true;
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.showQuickMessage("Heading to the Dog King's Fortress...", 0x44ff44);

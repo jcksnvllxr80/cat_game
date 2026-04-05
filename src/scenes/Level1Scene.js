@@ -6,6 +6,32 @@ export class Level1Scene extends Phaser.Scene {
     super('Level1Scene');
   }
 
+  init(data) {
+    this.playerState = data.playerState || {
+      hunger: 100,
+      thirst: 100,
+      health: 100,
+      maxHealth: 100,
+      isRunning: false,
+      isPouncing: false,
+      pounceReady: true,
+      pounceCooldown: 1000,
+      facingRight: true,
+      tunasCollected: 0,
+      watersCollected: 0,
+      mapPieces: 0,
+      accessories: [],
+      speed: 200,
+      jumpPower: -400,
+      isExhausted: false,
+      lives: 9,
+      party: ['whiskers'],
+      activeChar: 'whiskers',
+      collectedMapPieces: {},
+    };
+    this.playerState.collectedMapPieces = this.playerState.collectedMapPieces || {};
+  }
+
   create() {
     // World size (scrolling level)
     const worldWidth = 4000;
@@ -89,27 +115,6 @@ export class Level1Scene extends Phaser.Scene {
     this.player.setDepth(10);
     this.player.setFlipX(true); // Cat is drawn facing left, flip to face right at start
 
-    // Player state
-    this.playerState = {
-      hunger: 100,
-      thirst: 100,
-      health: 100,
-      maxHealth: 100,
-      isRunning: false,
-      isPouncing: false,
-      pounceReady: true,
-      pounceCooldown: 1000,
-      facingRight: true,
-      tunasCollected: 0,
-      watersCollected: 0,
-      mapPieces: 0,
-      accessories: [],
-      speed: 200,
-      jumpPower: -400,
-      isExhausted: false, // true when hunger or thirst hits 0
-      lives: 9,
-    };
-
     // ---- Collectibles ----
     this.tunas = this.physics.add.group();
     this.waters = this.physics.add.group();
@@ -140,11 +145,15 @@ export class Level1Scene extends Phaser.Scene {
     this.addGlowEffect(pendant);
 
     // Map piece (in Grandma Mittens' attic area - elevated platform at ~1800)
-    const mapPiece = this.mapPieces.create(1850, 300, 'map_piece');
-    mapPiece.body.setAllowGravity(false);
-    mapPiece.setScale(1.5);
-    this.addFloatAnimation(mapPiece);
-    this.addGlowEffect(mapPiece);
+    if (!this.playerState.collectedMapPieces.Level1Scene) {
+      this.mapPiece = this.mapPieces.create(1850, 300, 'map_piece');
+      this.mapPiece.body.setAllowGravity(false);
+      this.mapPiece.setScale(1.5);
+      this.addFloatAnimation(this.mapPiece);
+      this.addGlowEffect(this.mapPiece);
+    } else {
+      this.mapPiece = null;
+    }
 
     // ---- NPCs ----
     this.npcs = this.physics.add.staticGroup();
@@ -293,6 +302,10 @@ export class Level1Scene extends Phaser.Scene {
 
   exitLevel() {
     if (this.hasExited) return;
+    if (this.mapPiece?.active) {
+      this.showQuickMessage("Find this level's map piece before leaving!", 0xff4444);
+      return;
+    }
     this.hasExited = true;
 
     this.cameras.main.fadeOut(800, 0, 0, 0);
@@ -621,10 +634,17 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   scareEnemy(enemy) {
+    if (!enemy.active || enemy.getData('defeated')) return;
+
     // Enemy runs away scared
+    enemy.setData('defeated', true);
     const runDir = enemy.x > this.player.x ? 1 : -1;
     enemy.setVelocityX(runDir * 300);
     enemy.setVelocityY(-200);
+    if (enemy.body) {
+      enemy.body.enable = false;
+      enemy.body.checkCollision.none = true;
+    }
 
     // Flash and fade
     enemy.setTint(0xffaaaa);
@@ -639,6 +659,7 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+    if (enemy.getData('defeated')) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
@@ -704,6 +725,7 @@ export class Level1Scene extends Phaser.Scene {
     piece.destroy();
     try { this.sound.play('generalpickup', { volume: 0.6 }); } catch(e) {}
     this.playerState.mapPieces++;
+    this.playerState.collectedMapPieces.Level1Scene = true;
     this.showQuickMessage("MAP PIECE FOUND! (1/7)", 0xffd700);
     this.collectEffect(px, py, 0xffd700);
 
