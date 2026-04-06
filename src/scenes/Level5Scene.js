@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
 import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level5Scene extends Phaser.Scene {
   constructor() {
@@ -348,6 +349,20 @@ export class Level5Scene extends Phaser.Scene {
       spider.setData('dropping', false);
       spider.setData('returning', false);
       this.mechSpiders.push(spider);
+    });
+
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'factory',
+      worldWidth,
+      worldHeight,
+      platformKey: 'factory_platform',
+      groundKey: 'factory_ground',
+      pitGaps: [
+        { start: 1800, end: 1920 },
+        { start: 3200, end: 3320 },
+        { start: 4400, end: 4520 },
+      ],
     });
 
     // ---- Colliders ----
@@ -898,6 +913,9 @@ export class Level5Scene extends Phaser.Scene {
       this.companionManager.update();
     }
 
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -1040,6 +1058,7 @@ export class Level5Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

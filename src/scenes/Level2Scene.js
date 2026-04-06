@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
 import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level2Scene extends Phaser.Scene {
   constructor() {
@@ -335,6 +336,20 @@ export class Level2Scene extends Phaser.Scene {
 
     // ---- Fireflies (ambient decoration in dark zones) ----
     this.createFireflies();
+
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'forest',
+      worldWidth,
+      worldHeight,
+      platformKey: 'forest_platform',
+      groundKey: 'forest_ground',
+      pitGaps: [
+        { start: 1200, end: 1320 },
+        { start: 2600, end: 2720 },
+        { start: 3800, end: 3920 },
+      ],
+    });
 
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
@@ -917,6 +932,9 @@ export class Level2Scene extends Phaser.Scene {
       this.companionManager.update();
     }
 
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -1048,6 +1066,7 @@ export class Level2Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

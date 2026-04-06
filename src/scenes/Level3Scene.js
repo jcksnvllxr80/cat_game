@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
 import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level3Scene extends Phaser.Scene {
   constructor() {
@@ -311,6 +312,22 @@ export class Level3Scene extends Phaser.Scene {
 
     // ---- Water surface decoration ----
     this.createWaterSurface(worldWidth, worldHeight, waterGaps);
+
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'docks',
+      worldWidth,
+      worldHeight,
+      platformKey: 'dock_platform',
+      groundKey: 'dock_ground',
+      pitGaps: [
+        { start: 700, end: 900 },
+        { start: 1800, end: 2100 },
+        { start: 2500, end: 2900 },
+        { start: 3400, end: 3650 },
+        { start: 4300, end: 4550 },
+      ],
+    });
 
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
@@ -812,6 +829,9 @@ export class Level3Scene extends Phaser.Scene {
       this.companionManager.update();
     }
 
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into water
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -933,6 +953,7 @@ export class Level3Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

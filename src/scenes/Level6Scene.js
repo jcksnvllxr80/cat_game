@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
 import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level6Scene extends Phaser.Scene {
   constructor() {
@@ -311,6 +312,20 @@ export class Level6Scene extends Phaser.Scene {
 
     // ---- Falling Snowflakes ----
     this.createSnowflakes();
+
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'snow',
+      worldWidth,
+      worldHeight,
+      platformKey: 'snow_platform',
+      groundKey: 'snow_ground',
+      pitGaps: [
+        { start: 1400, end: 1520 },
+        { start: 2800, end: 2920 },
+        { start: 4500, end: 4620 },
+      ],
+    });
 
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
@@ -852,6 +867,9 @@ export class Level6Scene extends Phaser.Scene {
       this.companionManager.update();
     }
 
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into crevasse
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -973,6 +991,7 @@ export class Level6Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

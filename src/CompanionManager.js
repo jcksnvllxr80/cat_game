@@ -77,6 +77,9 @@ export class CompanionManager {
       // Collide with platforms
       this.scene.physics.add.collider(sprite, this.platforms);
 
+      // Initialize depth position
+      sprite.zPos = 0;
+
       // Shadow under companion
       const shadow = this.scene.add.image(sprite.x, sprite.y + 18, 'cat_shadow');
       shadow.setDepth(7);
@@ -112,12 +115,14 @@ export class CompanionManager {
     const prevVelX = this.player.body.velocity.x;
     const prevVelY = this.player.body.velocity.y;
     const prevFlipX = this.player.flipX;
+    const prevZPos = this.player.zPos || 0;
 
     // Move player sprite to new active companion's position
     const newX = newActiveCompanion.sprite.x;
     const newY = newActiveCompanion.sprite.y;
     this.player.setPosition(newX, newY);
     this.player.setVelocity(0, 0);
+    this.player.zPos = newActiveCompanion.sprite.zPos || 0;
 
     // Set player texture to new active character
     const newTexture = TEXTURE_MAP[newActive] || `cat_${newActive}_f0`;
@@ -133,6 +138,7 @@ export class CompanionManager {
     newActiveCompanion.sprite.setPosition(prevX, prevY);
     newActiveCompanion.sprite.setVelocity(prevVelX, prevVelY);
     newActiveCompanion.sprite.setFlipX(prevFlipX);
+    newActiveCompanion.sprite.zPos = prevZPos;
     newActiveCompanion.sprite.body.setSize(20, 22);
     newActiveCompanion.sprite.body.setOffset(14, 14);
 
@@ -158,10 +164,11 @@ export class CompanionManager {
     const moving = this.player.body.velocity.x !== 0;
     const onGround = this.player.body.blocked.down;
 
-    // Record player position each frame
+    // Record player position each frame (including depth)
     this.positionHistory.unshift({
       x: this.player.x,
       y: this.player.y,
+      zPos: this.player.zPos || 0,
       flipX: this.player.flipX,
       moving,
       onGround,
@@ -211,6 +218,9 @@ export class CompanionManager {
       } else {
         sprite.setVelocityX(0);
       }
+
+      // Follow Z depth with delay
+      sprite.zPos = target.zPos || 0;
 
       // Match facing direction
       sprite.setFlipX(target.flipX);

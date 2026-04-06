@@ -14,10 +14,25 @@
       min-height: 100vh;
       overflow: hidden;
     }
-    canvas { display: block; }
+    #game-container {
+      position: relative;
+      width: 1024px;
+      height: 576px;
+    }
+    #game-container canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Three.js canvas behind Phaser */
+    #three-canvas { z-index: 0; }
+    /* Phaser canvas on top (transparent for UI only) */
+    #game-container > canvas:not(#three-canvas) { z-index: 1; }
   </style>
 </head>
 <body>
+  <div id="game-container"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
