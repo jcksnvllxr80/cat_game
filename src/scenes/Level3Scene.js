@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
 
 export class Level3Scene extends Phaser.Scene {
   constructor() {
@@ -324,6 +325,9 @@ export class Level3Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
 
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
+
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -384,44 +388,65 @@ export class Level3Scene extends Phaser.Scene {
 
   // ---- BACKGROUND ----
   createDockBackground(worldWidth, worldHeight) {
-    // Blue sky with gradient
+    // Blue sky with deeper gradient for 2.5D depth
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x4488cc, 0x4488cc, 0x88ccee, 0x88ccee);
+    sky.fillGradientStyle(0x3366aa, 0x3366aa, 0x88ccee, 0x88ccee);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Clouds
+    // Cloud shadows on water
+    const cloudShadows = this.add.graphics();
+    cloudShadows.setScrollFactor(0.03);
+    cloudShadows.setDepth(-9.5);
+    cloudShadows.fillStyle(0x000000, 0.05);
+    for (let i = 0; i < 10; i++) {
+      cloudShadows.fillEllipse(Math.random() * worldWidth, worldHeight - 130 + Math.random() * 40, 80 + Math.random() * 60, 15 + Math.random() * 10);
+    }
+
+    // Clouds with highlight/shadow
     const clouds = this.add.graphics();
     clouds.setScrollFactor(0.05);
     clouds.setDepth(-9);
-    clouds.fillStyle(0xffffff, 0.6);
     for (let i = 0; i < 15; i++) {
       const cx = Math.random() * worldWidth;
       const cy = 30 + Math.random() * 80;
       const cw = 60 + Math.random() * 80;
       const ch = 20 + Math.random() * 15;
+      // Shadow underneath
+      clouds.fillStyle(0xaabbcc, 0.3);
+      clouds.fillEllipse(cx, cy + 4, cw, ch * 0.6);
+      // Main cloud
+      clouds.fillStyle(0xffffff, 0.6);
       clouds.fillEllipse(cx, cy, cw, ch);
       clouds.fillEllipse(cx + cw * 0.3, cy - 5, cw * 0.7, ch * 0.8);
       clouds.fillEllipse(cx - cw * 0.2, cy + 3, cw * 0.5, ch * 0.6);
     }
 
-    // Ocean horizon
+    // Ocean horizon with wave highlight
     const ocean = this.add.graphics();
     ocean.setScrollFactor(0.1);
     ocean.setDepth(-8);
-    ocean.fillGradientStyle(0x2266aa, 0x2266aa, 0x3388cc, 0x3388cc);
+    ocean.fillGradientStyle(0x1a5599, 0x1a5599, 0x3388cc, 0x3388cc);
     ocean.fillRect(0, worldHeight - 180, worldWidth, 130);
+    // Wave shimmer highlights
+    ocean.fillStyle(0x55aadd, 0.2);
+    for (let i = 0; i < worldWidth / 40; i++) {
+      ocean.fillRect(i * 40 + Math.random() * 20, worldHeight - 140 + Math.random() * 60, 15 + Math.random() * 10, 2);
+    }
 
-    // Distant ships
+    // Distant ships with reflections
     const ships = this.add.graphics();
     ships.setScrollFactor(0.15);
     ships.setDepth(-7);
-    ships.fillStyle(0x445566, 0.5);
     for (let i = 0; i < 4; i++) {
       const sx = 200 + i * (worldWidth / 4) + Math.random() * 100;
       const sy = worldHeight - 160;
+      // Hull shadow (reflection)
+      ships.fillStyle(0x223344, 0.2);
+      ships.fillRect(sx - 15, sy + 8, 30, 6);
       // Hull
+      ships.fillStyle(0x445566, 0.5);
       ships.fillRect(sx - 15, sy, 30, 8);
       // Mast
       ships.fillRect(sx - 1, sy - 20, 2, 20);
@@ -437,7 +462,6 @@ export class Level3Scene extends Phaser.Scene {
     for (let i = 0; i < 8; i++) {
       const gx = Math.random() * worldWidth;
       const gy = 40 + Math.random() * 100;
-      // Simple V shape for distant seagulls
       seagullSilhouettes.beginPath();
       seagullSilhouettes.moveTo(gx - 6, gy + 3);
       seagullSilhouettes.lineTo(gx, gy);
@@ -445,16 +469,33 @@ export class Level3Scene extends Phaser.Scene {
       seagullSilhouettes.strokePath();
     }
 
-    // Wooden dock structures (background pylons)
+    // Wooden dock structures (background pylons) with 2.5D depth
     const pylons = this.add.graphics();
     pylons.setScrollFactor(0.3);
     pylons.setDepth(-5);
-    pylons.fillStyle(0x664422, 0.5);
     for (let i = 0; i < worldWidth / 120; i++) {
       const px = i * 120 + Math.random() * 40;
-      pylons.fillRect(px - 4, worldHeight - 120, 8, 80);
+      // Shadow side of pylon
+      pylons.fillStyle(0x442211, 0.5);
+      pylons.fillRect(px - 4, worldHeight - 120, 4, 80);
+      // Light side of pylon
+      pylons.fillStyle(0x775533, 0.5);
+      pylons.fillRect(px, worldHeight - 120, 4, 80);
+      // Crossbeam with highlight
+      pylons.fillStyle(0x664422, 0.5);
       pylons.fillRect(px - 12, worldHeight - 120, 24, 4);
+      pylons.fillStyle(0x886644, 0.3);
+      pylons.fillRect(px - 12, worldHeight - 120, 24, 2);
+      // Shadow at base
+      pylons.fillStyle(0x000000, 0.1);
+      pylons.fillEllipse(px, worldHeight - 40, 16, 5);
     }
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-4);
+    groundShadow.fillStyle(0x000000, 0.12);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createDockDecorations(worldWidth, worldHeight) {
@@ -513,30 +554,9 @@ export class Level3Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0',
-      'boots': 'cat_boots_f0'
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna', 'boots': 'Boots' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
   }
 
   // ---- BOOTS SPRINT ABILITY ----
@@ -606,6 +626,11 @@ export class Level3Scene extends Phaser.Scene {
         this.time.delayedCall(100, () => {
           this.bootsNpc.destroy();
         });
+
+        // Sync companions so Boots appears as a follower
+        if (this.companionManager) {
+          this.companionManager.syncCompanions();
+        }
 
         this.showQuickMessage("BOOTS JOINED THE PARTY!", 0xff8800);
       }
@@ -781,6 +806,11 @@ export class Level3Scene extends Phaser.Scene {
         enemy.setFlipX(dir === -1);
       }
     });
+
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
 
     // Fall into water
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {

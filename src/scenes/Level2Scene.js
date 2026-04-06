@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
 
 export class Level2Scene extends Phaser.Scene {
   constructor() {
@@ -357,6 +358,9 @@ export class Level2Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
 
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
+
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -423,26 +427,45 @@ export class Level2Scene extends Phaser.Scene {
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Distant dark trees
+    // Distant dark trees — with light/dark sides for 2.5D depth
     const farTrees = this.add.graphics();
     farTrees.setScrollFactor(0.1);
     farTrees.setDepth(-9);
-    farTrees.fillStyle(0x0a1a0a, 0.8);
     for (let i = 0; i < worldWidth / 80; i++) {
       const tx = i * 80 + Math.random() * 30;
       const th = 120 + Math.random() * 100;
+      // Dark side
+      farTrees.fillStyle(0x0a1a0a, 0.8);
       farTrees.fillTriangle(tx - 30, worldHeight - 60, tx, worldHeight - 60 - th, tx + 30, worldHeight - 60);
       farTrees.fillTriangle(tx - 20, worldHeight - 60 - th * 0.3, tx, worldHeight - 60 - th - 30, tx + 20, worldHeight - 60 - th * 0.3);
+      // Subtle light side
+      farTrees.fillStyle(0x1a2a1a, 0.3);
+      farTrees.fillTriangle(tx - 20, worldHeight - 60, tx, worldHeight - 60 - th, tx, worldHeight - 60);
     }
 
-    // Mid trees
+    // Extra far layer for more depth
+    const veryFarTrees = this.add.graphics();
+    veryFarTrees.setScrollFactor(0.05);
+    veryFarTrees.setDepth(-9.5);
+    veryFarTrees.fillStyle(0x050f05, 0.6);
+    for (let i = 0; i < worldWidth / 100; i++) {
+      const tx = i * 100 + Math.random() * 40;
+      const th = 150 + Math.random() * 120;
+      veryFarTrees.fillTriangle(tx - 40, worldHeight - 60, tx, worldHeight - 60 - th, tx + 40, worldHeight - 60);
+    }
+
+    // Mid trees — with shadow bases
     const midTrees = this.add.graphics();
     midTrees.setScrollFactor(0.3);
     midTrees.setDepth(-8);
-    midTrees.fillStyle(0x0a250a, 0.7);
     for (let i = 0; i < worldWidth / 60; i++) {
       const tx = i * 60 + Math.random() * 20;
       const th = 80 + Math.random() * 60;
+      // Shadow at base
+      midTrees.fillStyle(0x000000, 0.15);
+      midTrees.fillEllipse(tx, worldHeight - 48, 30, 8);
+      // Tree
+      midTrees.fillStyle(0x0a250a, 0.7);
       midTrees.fillTriangle(tx - 25, worldHeight - 50, tx, worldHeight - 50 - th, tx + 25, worldHeight - 50);
     }
 
@@ -464,6 +487,12 @@ export class Level2Scene extends Phaser.Scene {
     for (let i = 0; i < 20; i++) {
       mist.fillEllipse(Math.random() * worldWidth, worldHeight - 100 + Math.random() * 60, 80 + Math.random() * 100, 20 + Math.random() * 15);
     }
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-5);
+    groundShadow.fillStyle(0x000000, 0.15);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createTrees(worldWidth, worldHeight) {
@@ -574,29 +603,9 @@ export class Level2Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0'
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
 
     // Update darkness based on character
     this.updateDarknessOverlay();
@@ -721,6 +730,11 @@ export class Level2Scene extends Phaser.Scene {
         this.time.delayedCall(100, () => {
           this.lunaNpc.destroy();
         });
+
+        // Sync companions so Luna appears as a follower
+        if (this.companionManager) {
+          this.companionManager.syncCompanions();
+        }
 
         this.showQuickMessage("LUNA JOINED THE PARTY!", 0xaa88ff);
       }
@@ -897,6 +911,11 @@ export class Level2Scene extends Phaser.Scene {
 
     // Update darkness overlay position (follows camera)
     this.updateDarknessOverlay();
+
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
 
     // Fall into pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {

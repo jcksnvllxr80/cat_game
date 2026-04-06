@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
 
 export class Level7Scene extends Phaser.Scene {
   constructor() {
@@ -342,6 +343,9 @@ export class Level7Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
 
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
+
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -388,60 +392,105 @@ export class Level7Scene extends Phaser.Scene {
 
   // ---- BACKGROUND ----
   createFortressBackground(worldWidth, worldHeight) {
-    // Dark stormy sky
+    // Dark stormy sky with deeper gradient
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x0a0a1a, 0x0a0a1a, 0x1a1020, 0x1a1020);
+    sky.fillGradientStyle(0x050510, 0x050510, 0x1a1020, 0x1a1020);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Storm clouds
+    // Storm clouds with lightning glow
     const clouds = this.add.graphics();
     clouds.setScrollFactor(0.05);
     clouds.setDepth(-9);
-    clouds.fillStyle(0x222233, 0.7);
     for (let i = 0; i < 20; i++) {
       const cx = Math.random() * worldWidth;
       const cy = 20 + Math.random() * 80;
       const cw = 80 + Math.random() * 100;
       const ch = 25 + Math.random() * 20;
+      // Cloud underbelly glow
+      clouds.fillStyle(0x332244, 0.3);
+      clouds.fillEllipse(cx, cy + 5, cw * 0.8, ch * 0.4);
+      // Main cloud
+      clouds.fillStyle(0x222233, 0.7);
       clouds.fillEllipse(cx, cy, cw, ch);
       clouds.fillEllipse(cx + cw * 0.3, cy - 5, cw * 0.6, ch * 0.7);
     }
 
-    // Distant dark stone towers
+    // Very distant towers silhouettes
+    const veryFarTowers = this.add.graphics();
+    veryFarTowers.setScrollFactor(0.05);
+    veryFarTowers.setDepth(-8.5);
+    veryFarTowers.fillStyle(0x0f0f1f, 0.6);
+    for (let i = 0; i < worldWidth / 200; i++) {
+      const tx = i * 200 + Math.random() * 60;
+      const tw = 40 + Math.random() * 30;
+      const th = 150 + Math.random() * 180;
+      veryFarTowers.fillRect(tx - tw / 2, worldHeight - 60 - th, tw, th + 60);
+    }
+
+    // Distant dark stone towers with 2.5D depth
     const farTowers = this.add.graphics();
     farTowers.setScrollFactor(0.1);
     farTowers.setDepth(-8);
-    farTowers.fillStyle(0x1a1a2a, 0.8);
     for (let i = 0; i < worldWidth / 150; i++) {
       const tx = i * 150 + Math.random() * 40;
       const tw = 30 + Math.random() * 20;
       const th = 100 + Math.random() * 150;
-      farTowers.fillRect(tx - tw / 2, worldHeight - 60 - th, tw, th);
+      // Dark face (left)
+      farTowers.fillStyle(0x111122, 0.8);
+      farTowers.fillRect(tx - tw / 2, worldHeight - 60 - th, tw * 0.5, th);
+      // Light face (right)
+      farTowers.fillStyle(0x222233, 0.8);
+      farTowers.fillRect(tx, worldHeight - 60 - th, tw * 0.5, th);
       // Battlements
+      farTowers.fillStyle(0x1a1a2a, 0.8);
       farTowers.fillRect(tx - tw / 2 - 5, worldHeight - 60 - th - 10, tw + 10, 10);
+      // Top edge highlight
+      farTowers.fillStyle(0x2a2a3a, 0.4);
+      farTowers.fillRect(tx - tw / 2 - 5, worldHeight - 60 - th - 10, tw + 10, 2);
+      // Lit window slits
+      farTowers.fillStyle(0x664422, 0.3);
+      farTowers.fillRect(tx - 2, worldHeight - 60 - th * 0.6, 4, 8);
+      farTowers.fillRect(tx - 2, worldHeight - 60 - th * 0.3, 4, 8);
     }
 
-    // Mid-range walls
+    // Mid-range walls with depth
     const midWalls = this.add.graphics();
     midWalls.setScrollFactor(0.3);
     midWalls.setDepth(-7);
-    midWalls.fillStyle(0x2a2030, 0.6);
     for (let i = 0; i < worldWidth / 200; i++) {
       const wx = i * 200 + Math.random() * 60;
       const ww = 60 + Math.random() * 40;
       const wh = 80 + Math.random() * 100;
-      midWalls.fillRect(wx - ww / 2, worldHeight - 50 - wh, ww, wh);
+      // Dark face
+      midWalls.fillStyle(0x1a1520, 0.6);
+      midWalls.fillRect(wx - ww / 2, worldHeight - 50 - wh, ww * 0.5, wh);
+      // Light face
+      midWalls.fillStyle(0x2a2535, 0.6);
+      midWalls.fillRect(wx, worldHeight - 50 - wh, ww * 0.5, wh);
+      // Top cap
+      midWalls.fillStyle(0x3a3040, 0.3);
+      midWalls.fillRect(wx - ww / 2, worldHeight - 50 - wh, ww, 3);
     }
 
     // Iron gate visual (near start)
     const gate = this.add.graphics();
     gate.setDepth(3);
+    // Gate pillars with 2.5D faces
+    gate.fillStyle(0x2a2a3a, 0.9);
+    gate.fillRect(1000, worldHeight - 200, 10, 150);
     gate.fillStyle(0x3a3a4a, 0.9);
-    gate.fillRect(1000, worldHeight - 200, 20, 150);
-    gate.fillRect(1100, worldHeight - 200, 20, 150);
+    gate.fillRect(1010, worldHeight - 200, 10, 150);
+    gate.fillStyle(0x2a2a3a, 0.9);
+    gate.fillRect(1100, worldHeight - 200, 10, 150);
+    gate.fillStyle(0x3a3a4a, 0.9);
+    gate.fillRect(1110, worldHeight - 200, 10, 150);
+    // Top beam with highlight
+    gate.fillStyle(0x3a3a4a, 0.9);
     gate.fillRect(990, worldHeight - 210, 140, 20);
+    gate.fillStyle(0x4a4a5a, 0.5);
+    gate.fillRect(990, worldHeight - 210, 140, 3);
     // Gate bars
     gate.fillStyle(0x555566, 0.7);
     for (let i = 0; i < 5; i++) {
@@ -472,6 +521,12 @@ export class Level7Scene extends Phaser.Scene {
     warmGlow.setDepth(-5);
     warmGlow.fillStyle(0x443322, 0.15);
     warmGlow.fillRect(5000, 0, 2000, worldHeight);
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-4);
+    groundShadow.fillStyle(0x000000, 0.15);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createFortressDecorations(worldWidth, worldHeight) {
@@ -629,32 +684,9 @@ export class Level7Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0',
-      'boots': 'cat_boots_f0',
-      'cleo': 'cat_cleo_f0',
-      'mochi': 'cat_mochi_f0',
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna', 'boots': 'Boots', 'cleo': 'Cleo', 'mochi': 'Mochi' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
 
     // Update darkness based on character
     this.updateDarknessOverlay();
@@ -1054,6 +1086,11 @@ export class Level7Scene extends Phaser.Scene {
 
     // Update darkness overlay
     this.updateDarknessOverlay();
+
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
 
     // Fall into lava pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {

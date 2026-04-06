@@ -835,12 +835,18 @@ export class BootScene extends Phaser.Scene {
     water.generateTexture('water', 24, 20);
     water.destroy();
 
-    // Platform tile
+    // Platform tile (2.5D extruded)
     const platform = this.add.graphics();
+    // Front face (darker, gives depth)
+    platform.fillStyle(0x5a3a0a);
+    platform.fillRect(0, 8, 32, 24);
+    // Front face bottom highlight
+    platform.fillStyle(0x4a2a00, 0.6);
+    platform.fillRect(0, 28, 32, 4);
+    // Top face (lighter, angled look)
     platform.fillStyle(0x8B6914);
-    platform.fillRect(0, 0, 32, 32);
-    platform.fillStyle(0x6B4914);
-    platform.fillRect(0, 0, 32, 4);
+    platform.fillRect(0, 0, 32, 10);
+    // Grass on top
     platform.fillStyle(0x4CAF50);
     platform.fillRect(0, 0, 32, 6);
     platform.fillStyle(0x66BB6A);
@@ -848,35 +854,60 @@ export class BootScene extends Phaser.Scene {
     platform.fillRect(10, 0, 3, 4);
     platform.fillRect(20, 0, 5, 3);
     platform.fillRect(28, 0, 3, 4);
-    platform.fillStyle(0x9B7924, 0.3);
-    platform.fillRect(4, 12, 3, 3);
+    // Edge highlight (top lip)
+    platform.fillStyle(0x9B7924, 0.7);
+    platform.fillRect(0, 8, 32, 2);
+    // Texture detail on front face
+    platform.fillStyle(0x4a2a00, 0.3);
+    platform.fillRect(4, 14, 3, 3);
     platform.fillRect(15, 20, 4, 3);
-    platform.fillRect(24, 14, 3, 2);
+    platform.fillRect(24, 16, 3, 2);
     platform.generateTexture('platform', 32, 32);
     platform.destroy();
 
-    // Ground
+    // Ground (2.5D layered depth)
     const ground = this.add.graphics();
     ground.fillStyle(0x6B4914);
     ground.fillRect(0, 0, 32, 32);
+    // Depth layers - darker toward bottom
+    ground.fillStyle(0x5a3a0a, 0.5);
+    ground.fillRect(0, 16, 32, 16);
+    ground.fillStyle(0x4a2a00, 0.3);
+    ground.fillRect(0, 24, 32, 8);
+    // Surface detail
     ground.fillStyle(0x5a3a0a, 0.4);
     ground.fillRect(5, 8, 4, 4);
     ground.fillRect(18, 15, 5, 3);
     ground.fillRect(10, 24, 3, 4);
+    // Subtle top highlight
+    ground.fillStyle(0x7B5924, 0.4);
+    ground.fillRect(0, 0, 32, 2);
     ground.generateTexture('ground', 32, 32);
     ground.destroy();
 
-    // Crate
+    // Crate (2.5D with visible top and right side)
     const crate = this.add.graphics();
+    // Right side face (darkest)
+    crate.fillStyle(0x8B6914);
+    crate.fillRect(24, 4, 8, 28);
+    // Front face
     crate.fillStyle(0xc8a45c);
-    crate.fillRect(0, 0, 32, 32);
+    crate.fillRect(0, 4, 24, 28);
+    // Top face (lighter)
+    crate.fillStyle(0xdab46c);
+    crate.fillRect(0, 0, 28, 6);
+    // Top face perspective line
+    crate.lineStyle(1, 0xb89040);
+    crate.lineBetween(24, 4, 32, 0);
+    // Frame lines
     crate.lineStyle(2, 0x8B6914);
-    crate.strokeRect(1, 1, 30, 30);
-    crate.lineBetween(1, 1, 31, 31);
-    crate.lineBetween(31, 1, 1, 31);
+    crate.strokeRect(1, 5, 22, 26);
+    crate.lineBetween(1, 5, 23, 31);
+    crate.lineBetween(23, 5, 1, 31);
+    // Side face detail
     crate.lineStyle(1, 0x6B4914, 0.5);
-    crate.lineBetween(8, 0, 12, 8);
-    crate.lineBetween(24, 0, 20, 10);
+    crate.lineBetween(26, 8, 30, 8);
+    crate.lineBetween(26, 20, 30, 20);
     crate.generateTexture('crate', 32, 32);
     crate.destroy();
 
@@ -981,31 +1012,48 @@ export class BootScene extends Phaser.Scene {
     particle.generateTexture('wood_particle', 6, 6);
     particle.destroy();
 
-    // Forest platform
+    // Forest platform (2.5D extruded)
     const forestPlatform = this.add.graphics();
+    // Front face
+    forestPlatform.fillStyle(0x2a1a0a);
+    forestPlatform.fillRect(0, 8, 32, 24);
+    forestPlatform.fillStyle(0x1a0a00, 0.5);
+    forestPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     forestPlatform.fillStyle(0x3a2a1a);
-    forestPlatform.fillRect(0, 0, 32, 32);
+    forestPlatform.fillRect(0, 0, 32, 10);
+    // Moss on top
     forestPlatform.fillStyle(0x2a4a1a);
     forestPlatform.fillRect(0, 0, 32, 6);
     forestPlatform.fillStyle(0x4a6a2a, 0.7);
     forestPlatform.fillCircle(5, 3, 4);
     forestPlatform.fillCircle(16, 2, 5);
     forestPlatform.fillCircle(27, 3, 4);
-    forestPlatform.fillStyle(0x2a1a0a, 0.3);
-    forestPlatform.fillRect(3, 10, 2, 6);
-    forestPlatform.fillRect(12, 14, 3, 4);
-    forestPlatform.fillRect(22, 8, 2, 8);
+    // Edge lip
+    forestPlatform.fillStyle(0x3a2a1a, 0.8);
+    forestPlatform.fillRect(0, 8, 32, 2);
+    // Front face detail
+    forestPlatform.fillStyle(0x1a0a00, 0.3);
+    forestPlatform.fillRect(3, 12, 2, 6);
+    forestPlatform.fillRect(12, 16, 3, 4);
+    forestPlatform.fillRect(22, 10, 2, 8);
     forestPlatform.generateTexture('forest_platform', 32, 32);
     forestPlatform.destroy();
 
-    // Forest ground
+    // Forest ground (2.5D layered depth)
     const forestGround = this.add.graphics();
     forestGround.fillStyle(0x2a1a0a);
     forestGround.fillRect(0, 0, 32, 32);
+    forestGround.fillStyle(0x1a0a00, 0.5);
+    forestGround.fillRect(0, 16, 32, 16);
+    forestGround.fillStyle(0x0a0000, 0.3);
+    forestGround.fillRect(0, 24, 32, 8);
     forestGround.fillStyle(0x1a0a00, 0.4);
     forestGround.fillRect(4, 6, 5, 4);
     forestGround.fillRect(16, 18, 4, 3);
     forestGround.fillRect(8, 24, 6, 3);
+    forestGround.fillStyle(0x3a2a1a, 0.4);
+    forestGround.fillRect(0, 0, 32, 2);
     forestGround.generateTexture('forest_ground', 32, 32);
     forestGround.destroy();
 
@@ -1161,30 +1209,46 @@ export class BootScene extends Phaser.Scene {
 
     // ---- ZONE 3: Tuna Bay Docks textures ----
 
-    // Dock platform (wooden planks)
+    // Dock platform (2.5D wooden planks with depth)
     const dockPlatform = this.add.graphics();
+    // Front face
+    dockPlatform.fillStyle(0x6B4914);
+    dockPlatform.fillRect(0, 8, 32, 24);
+    dockPlatform.fillStyle(0x5a3a0a, 0.5);
+    dockPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     dockPlatform.fillStyle(0x8B6914);
-    dockPlatform.fillRect(0, 0, 32, 32);
+    dockPlatform.fillRect(0, 0, 32, 10);
     dockPlatform.fillStyle(0x9B7924);
     dockPlatform.fillRect(0, 0, 32, 6);
-    dockPlatform.lineStyle(1, 0x6B4914, 0.6);
-    dockPlatform.lineBetween(0, 8, 32, 8);
-    dockPlatform.lineBetween(0, 16, 32, 16);
-    dockPlatform.lineBetween(0, 24, 32, 24);
-    dockPlatform.fillStyle(0x5a3a0a, 0.3);
+    // Edge lip
+    dockPlatform.fillStyle(0x7B5914, 0.8);
+    dockPlatform.fillRect(0, 8, 32, 2);
+    // Plank lines on front
+    dockPlatform.lineStyle(1, 0x5a3a0a, 0.6);
+    dockPlatform.lineBetween(0, 14, 32, 14);
+    dockPlatform.lineBetween(0, 20, 32, 20);
+    dockPlatform.lineBetween(0, 26, 32, 26);
+    dockPlatform.fillStyle(0x4a2a00, 0.3);
     dockPlatform.fillRect(6, 2, 2, 4);
-    dockPlatform.fillRect(22, 10, 2, 4);
+    dockPlatform.fillRect(22, 12, 2, 4);
     dockPlatform.generateTexture('dock_platform', 32, 32);
     dockPlatform.destroy();
 
-    // Dock ground (dark wet wood)
+    // Dock ground (2.5D dark wet wood)
     const dockGround = this.add.graphics();
     dockGround.fillStyle(0x5a3a1a);
     dockGround.fillRect(0, 0, 32, 32);
     dockGround.fillStyle(0x4a2a0a, 0.5);
+    dockGround.fillRect(0, 16, 32, 16);
+    dockGround.fillStyle(0x3a1a00, 0.3);
+    dockGround.fillRect(0, 24, 32, 8);
+    dockGround.fillStyle(0x4a2a0a, 0.5);
     dockGround.fillRect(3, 5, 6, 3);
     dockGround.fillRect(14, 18, 5, 4);
     dockGround.fillRect(24, 8, 4, 3);
+    dockGround.fillStyle(0x6a4a2a, 0.4);
+    dockGround.fillRect(0, 0, 32, 2);
     dockGround.generateTexture('dock_ground', 32, 32);
     dockGround.destroy();
 
@@ -1263,27 +1327,43 @@ export class BootScene extends Phaser.Scene {
 
     // ---- ZONE 4: Catnip Canyon textures ----
 
-    // Canyon platform (red/brown rock)
+    // Canyon platform (2.5D red/brown rock with depth)
     const canyonPlatform = this.add.graphics();
+    // Front face
+    canyonPlatform.fillStyle(0x6B3410);
+    canyonPlatform.fillRect(0, 8, 32, 24);
+    canyonPlatform.fillStyle(0x5a2a08, 0.5);
+    canyonPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     canyonPlatform.fillStyle(0x8B4513);
-    canyonPlatform.fillRect(0, 0, 32, 32);
+    canyonPlatform.fillRect(0, 0, 32, 10);
     canyonPlatform.fillStyle(0xA0522D);
     canyonPlatform.fillRect(0, 0, 32, 6);
-    canyonPlatform.fillStyle(0x6B3410, 0.4);
-    canyonPlatform.fillRect(5, 10, 4, 4);
-    canyonPlatform.fillRect(20, 16, 6, 3);
-    canyonPlatform.fillRect(12, 22, 3, 5);
+    // Edge lip
+    canyonPlatform.fillStyle(0x7B3510, 0.8);
+    canyonPlatform.fillRect(0, 8, 32, 2);
+    // Front face detail
+    canyonPlatform.fillStyle(0x5a2408, 0.4);
+    canyonPlatform.fillRect(5, 12, 4, 4);
+    canyonPlatform.fillRect(20, 18, 6, 3);
+    canyonPlatform.fillRect(12, 24, 3, 5);
     canyonPlatform.generateTexture('canyon_platform', 32, 32);
     canyonPlatform.destroy();
 
-    // Canyon ground
+    // Canyon ground (2.5D)
     const canyonGround = this.add.graphics();
     canyonGround.fillStyle(0x6B3410);
     canyonGround.fillRect(0, 0, 32, 32);
+    canyonGround.fillStyle(0x5a2408, 0.5);
+    canyonGround.fillRect(0, 16, 32, 16);
+    canyonGround.fillStyle(0x4a1a00, 0.3);
+    canyonGround.fillRect(0, 24, 32, 8);
     canyonGround.fillStyle(0x5a2a08, 0.5);
     canyonGround.fillRect(4, 8, 5, 4);
     canyonGround.fillRect(18, 20, 6, 3);
     canyonGround.fillRect(10, 4, 3, 5);
+    canyonGround.fillStyle(0x7B4420, 0.4);
+    canyonGround.fillRect(0, 0, 32, 2);
     canyonGround.generateTexture('canyon_ground', 32, 32);
     canyonGround.destroy();
 
@@ -1353,30 +1433,44 @@ export class BootScene extends Phaser.Scene {
 
     // ---- ZONE 5: Yarn Factory textures ----
 
-    // Factory platform (metal grating)
+    // Factory platform (2.5D metal grating with depth)
     const factoryPlatform = this.add.graphics();
+    // Front face
+    factoryPlatform.fillStyle(0x444444);
+    factoryPlatform.fillRect(0, 8, 32, 24);
+    factoryPlatform.fillStyle(0x333333, 0.5);
+    factoryPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     factoryPlatform.fillStyle(0x555555);
-    factoryPlatform.fillRect(0, 0, 32, 32);
+    factoryPlatform.fillRect(0, 0, 32, 10);
     factoryPlatform.fillStyle(0x666666);
     factoryPlatform.fillRect(0, 0, 32, 6);
-    factoryPlatform.lineStyle(1, 0x444444, 0.5);
-    factoryPlatform.lineBetween(0, 10, 32, 10);
-    factoryPlatform.lineBetween(0, 18, 32, 18);
+    // Edge lip
+    factoryPlatform.fillStyle(0x5a5a5a, 0.8);
+    factoryPlatform.fillRect(0, 8, 32, 2);
+    // Grating lines on front
+    factoryPlatform.lineStyle(1, 0x3a3a3a, 0.5);
+    factoryPlatform.lineBetween(0, 14, 32, 14);
+    factoryPlatform.lineBetween(0, 20, 32, 20);
     factoryPlatform.lineBetween(0, 26, 32, 26);
-    factoryPlatform.lineBetween(8, 0, 8, 32);
-    factoryPlatform.lineBetween(16, 0, 16, 32);
-    factoryPlatform.lineBetween(24, 0, 24, 32);
+    factoryPlatform.lineBetween(8, 8, 8, 32);
+    factoryPlatform.lineBetween(16, 8, 16, 32);
+    factoryPlatform.lineBetween(24, 8, 24, 32);
     factoryPlatform.generateTexture('factory_platform', 32, 32);
     factoryPlatform.destroy();
 
-    // Factory ground (dark metal floor)
+    // Factory ground (2.5D dark metal floor)
     const factoryGround = this.add.graphics();
     factoryGround.fillStyle(0x3a3a3a);
     factoryGround.fillRect(0, 0, 32, 32);
     factoryGround.fillStyle(0x2a2a2a, 0.5);
+    factoryGround.fillRect(0, 16, 32, 16);
+    factoryGround.fillStyle(0x1a1a1a, 0.3);
+    factoryGround.fillRect(0, 24, 32, 8);
+    factoryGround.fillStyle(0x2a2a2a, 0.5);
     factoryGround.fillRect(4, 8, 6, 3);
     factoryGround.fillRect(18, 20, 5, 4);
-    factoryGround.fillStyle(0x444444, 0.3);
+    factoryGround.fillStyle(0x4a4a4a, 0.3);
     factoryGround.fillRect(0, 0, 32, 2);
     factoryGround.generateTexture('factory_ground', 32, 32);
     factoryGround.destroy();
@@ -1468,30 +1562,48 @@ export class BootScene extends Phaser.Scene {
 
     // ---- ZONE 6: Snowpaw Summit textures ----
 
-    // Snow platform
+    // Snow platform (2.5D with icy depth)
     const snowPlatform = this.add.graphics();
+    // Front face
+    snowPlatform.fillStyle(0x6677aa);
+    snowPlatform.fillRect(0, 8, 32, 24);
+    snowPlatform.fillStyle(0x556699, 0.5);
+    snowPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     snowPlatform.fillStyle(0x8899aa);
-    snowPlatform.fillRect(0, 0, 32, 32);
+    snowPlatform.fillRect(0, 0, 32, 10);
+    // Snow on top
     snowPlatform.fillStyle(0xeeeeff);
     snowPlatform.fillRect(0, 0, 32, 8);
     snowPlatform.fillStyle(0xffffff, 0.6);
     snowPlatform.fillCircle(5, 3, 4);
     snowPlatform.fillCircle(16, 2, 5);
     snowPlatform.fillCircle(27, 4, 4);
-    snowPlatform.fillStyle(0x7788aa, 0.3);
-    snowPlatform.fillRect(4, 14, 3, 4);
-    snowPlatform.fillRect(20, 18, 4, 3);
+    // Edge lip
+    snowPlatform.fillStyle(0x7788bb, 0.8);
+    snowPlatform.fillRect(0, 8, 32, 2);
+    // Icicle hints
+    snowPlatform.fillStyle(0xaabbdd, 0.5);
+    snowPlatform.fillRect(6, 10, 2, 6);
+    snowPlatform.fillRect(18, 10, 2, 8);
+    snowPlatform.fillRect(28, 10, 2, 5);
     snowPlatform.generateTexture('snow_platform', 32, 32);
     snowPlatform.destroy();
 
-    // Snow ground
+    // Snow ground (2.5D)
     const snowGround = this.add.graphics();
     snowGround.fillStyle(0x667788);
     snowGround.fillRect(0, 0, 32, 32);
     snowGround.fillStyle(0x556677, 0.5);
+    snowGround.fillRect(0, 16, 32, 16);
+    snowGround.fillStyle(0x445566, 0.3);
+    snowGround.fillRect(0, 24, 32, 8);
+    snowGround.fillStyle(0x556677, 0.5);
     snowGround.fillRect(4, 6, 5, 4);
     snowGround.fillRect(18, 18, 6, 3);
     snowGround.fillRect(10, 24, 4, 4);
+    snowGround.fillStyle(0x778899, 0.4);
+    snowGround.fillRect(0, 0, 32, 2);
     snowGround.generateTexture('snow_ground', 32, 32);
     snowGround.destroy();
 
@@ -1557,26 +1669,40 @@ export class BootScene extends Phaser.Scene {
 
     // ---- ZONE 7: Dog King's Fortress textures ----
 
-    // Fortress platform (dark stone bricks)
+    // Fortress platform (2.5D dark stone bricks with depth)
     const fortPlatform = this.add.graphics();
+    // Front face
+    fortPlatform.fillStyle(0x333333);
+    fortPlatform.fillRect(0, 8, 32, 24);
+    fortPlatform.fillStyle(0x222222, 0.5);
+    fortPlatform.fillRect(0, 26, 32, 6);
+    // Top face
     fortPlatform.fillStyle(0x444444);
-    fortPlatform.fillRect(0, 0, 32, 32);
+    fortPlatform.fillRect(0, 0, 32, 10);
     fortPlatform.fillStyle(0x555555);
     fortPlatform.fillRect(0, 0, 32, 6);
-    fortPlatform.lineStyle(1, 0x333333, 0.6);
-    fortPlatform.lineBetween(0, 10, 32, 10);
-    fortPlatform.lineBetween(0, 20, 32, 20);
-    fortPlatform.lineBetween(16, 0, 16, 10);
-    fortPlatform.lineBetween(8, 10, 8, 20);
-    fortPlatform.lineBetween(24, 10, 24, 20);
-    fortPlatform.lineBetween(12, 20, 12, 32);
+    // Edge lip
+    fortPlatform.fillStyle(0x4a4a4a, 0.8);
+    fortPlatform.fillRect(0, 8, 32, 2);
+    // Brick lines on front
+    fortPlatform.lineStyle(1, 0x2a2a2a, 0.6);
+    fortPlatform.lineBetween(0, 14, 32, 14);
+    fortPlatform.lineBetween(0, 22, 32, 22);
+    fortPlatform.lineBetween(16, 8, 16, 14);
+    fortPlatform.lineBetween(8, 14, 8, 22);
+    fortPlatform.lineBetween(24, 14, 24, 22);
+    fortPlatform.lineBetween(12, 22, 12, 32);
     fortPlatform.generateTexture('fortress_platform', 32, 32);
     fortPlatform.destroy();
 
-    // Fortress ground (dark cobblestone)
+    // Fortress ground (2.5D dark cobblestone)
     const fortGround = this.add.graphics();
     fortGround.fillStyle(0x2a2a2a);
     fortGround.fillRect(0, 0, 32, 32);
+    fortGround.fillStyle(0x1a1a1a, 0.5);
+    fortGround.fillRect(0, 16, 32, 16);
+    fortGround.fillStyle(0x111111, 0.3);
+    fortGround.fillRect(0, 24, 32, 8);
     fortGround.fillStyle(0x333333, 0.5);
     fortGround.fillRect(2, 4, 6, 5);
     fortGround.fillRect(12, 14, 8, 5);
@@ -1584,6 +1710,8 @@ export class BootScene extends Phaser.Scene {
     fortGround.lineStyle(1, 0x1a1a1a, 0.3);
     fortGround.lineBetween(0, 8, 32, 8);
     fortGround.lineBetween(0, 20, 32, 20);
+    fortGround.fillStyle(0x3a3a3a, 0.4);
+    fortGround.fillRect(0, 0, 32, 2);
     fortGround.generateTexture('fortress_ground', 32, 32);
     fortGround.destroy();
 
@@ -1680,5 +1808,12 @@ export class BootScene extends Phaser.Scene {
     torch.fillCircle(6, 5, 2);
     torch.generateTexture('torch', 12, 24);
     torch.destroy();
+
+    // Character shadow (2.5D ground shadow ellipse)
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.35);
+    shadow.fillEllipse(16, 4, 28, 8);
+    shadow.generateTexture('cat_shadow', 32, 8);
+    shadow.destroy();
   }
 }

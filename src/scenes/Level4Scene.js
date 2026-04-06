@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
 
 export class Level4Scene extends Phaser.Scene {
   constructor() {
@@ -365,6 +366,9 @@ export class Level4Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
 
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
+
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -423,67 +427,99 @@ export class Level4Scene extends Phaser.Scene {
 
   // ---- BACKGROUND ----
   createCanyonBackground(worldWidth, worldHeight) {
-    // Warm orange/red sky
+    // Warm orange/red sky with deeper gradient
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0xcc5522, 0xdd6633, 0xff8844, 0xffaa55);
+    sky.fillGradientStyle(0xaa4418, 0xcc5522, 0xff8844, 0xffbb66);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Distant canyon walls (far layer — dark reddish brown)
+    // Very distant canyon silhouettes
+    const veryFarWalls = this.add.graphics();
+    veryFarWalls.setScrollFactor(0.05);
+    veryFarWalls.setDepth(-9.5);
+    veryFarWalls.fillStyle(0x552211, 0.5);
+    for (let i = 0; i < worldWidth / 140; i++) {
+      const tx = i * 140 + Math.random() * 50;
+      const th = 180 + Math.random() * 140;
+      const w = 50 + Math.random() * 40;
+      veryFarWalls.fillRect(tx, worldHeight - 60 - th, w, th + 60);
+    }
+
+    // Distant canyon walls with light/shadow sides
     const farWalls = this.add.graphics();
     farWalls.setScrollFactor(0.1);
     farWalls.setDepth(-9);
-    farWalls.fillStyle(0x663322, 0.8);
     for (let i = 0; i < worldWidth / 100; i++) {
       const tx = i * 100 + Math.random() * 40;
       const th = 150 + Math.random() * 120;
-      // Canyon wall columns
       const w = 40 + Math.random() * 30;
-      farWalls.fillRect(tx, worldHeight - 60 - th, w, th + 60);
+      // Shadow side (left)
+      farWalls.fillStyle(0x4a2211, 0.8);
+      farWalls.fillRect(tx, worldHeight - 60 - th, w * 0.4, th + 60);
+      // Light side (right)
+      farWalls.fillStyle(0x774433, 0.8);
+      farWalls.fillRect(tx + w * 0.4, worldHeight - 60 - th, w * 0.6, th + 60);
       // Pointed tops
+      farWalls.fillStyle(0x663322, 0.8);
       farWalls.fillTriangle(tx - 5, worldHeight - 60 - th, tx + w / 2, worldHeight - 60 - th - 30, tx + w + 5, worldHeight - 60 - th);
     }
 
-    // Mid canyon walls (brownish-red)
+    // Mid canyon walls with gradient shading
     const midWalls = this.add.graphics();
     midWalls.setScrollFactor(0.3);
     midWalls.setDepth(-8);
-    midWalls.fillStyle(0x884422, 0.7);
     for (let i = 0; i < worldWidth / 80; i++) {
       const tx = i * 80 + Math.random() * 30;
       const th = 100 + Math.random() * 80;
       const w = 30 + Math.random() * 25;
-      midWalls.fillRect(tx, worldHeight - 50 - th, w, th + 50);
+      // Dark face
+      midWalls.fillStyle(0x663311, 0.7);
+      midWalls.fillRect(tx, worldHeight - 50 - th, w * 0.5, th + 50);
+      // Light face
+      midWalls.fillStyle(0x995533, 0.7);
+      midWalls.fillRect(tx + w * 0.5, worldHeight - 50 - th, w * 0.5, th + 50);
+      // Horizontal strata lines
+      midWalls.fillStyle(0x774422, 0.3);
+      for (let s = 0; s < 4; s++) {
+        midWalls.fillRect(tx, worldHeight - 50 - th + s * (th / 4), w, 2);
+      }
     }
 
-    // Near canyon walls (orange-brown)
+    // Near canyon walls
     const nearWalls = this.add.graphics();
     nearWalls.setScrollFactor(0.5);
     nearWalls.setDepth(-7);
-    nearWalls.fillStyle(0xaa5533, 0.5);
     for (let i = 0; i < worldWidth / 120; i++) {
       const tx = i * 120 + Math.random() * 50;
       const th = 60 + Math.random() * 50;
       const w = 25 + Math.random() * 20;
-      nearWalls.fillRect(tx, worldHeight - 50 - th, w, th + 50);
+      nearWalls.fillStyle(0x884422, 0.5);
+      nearWalls.fillRect(tx, worldHeight - 50 - th, w * 0.5, th + 50);
+      nearWalls.fillStyle(0xbb6644, 0.5);
+      nearWalls.fillRect(tx + w * 0.5, worldHeight - 50 - th, w * 0.5, th + 50);
     }
 
-    // Cacti silhouettes
+    // Cacti silhouettes with shadow bases
     const cacti = this.add.graphics();
     cacti.setScrollFactor(0.15);
     cacti.setDepth(-6);
-    cacti.fillStyle(0x224411, 0.6);
     for (let i = 0; i < worldWidth / 200; i++) {
       const cx = i * 200 + Math.random() * 80;
       const ch = 30 + Math.random() * 40;
-      // Cactus trunk
+      // Shadow at base
+      cacti.fillStyle(0x000000, 0.1);
+      cacti.fillEllipse(cx, worldHeight - 68, 14, 4);
+      // Cactus
+      cacti.fillStyle(0x224411, 0.6);
       cacti.fillRect(cx - 4, worldHeight - 70 - ch, 8, ch);
-      // Arms
       cacti.fillRect(cx - 15, worldHeight - 70 - ch * 0.6, 12, 6);
       cacti.fillRect(cx - 15, worldHeight - 70 - ch * 0.6 - 15, 6, 15);
       cacti.fillRect(cx + 4, worldHeight - 70 - ch * 0.4, 12, 6);
       cacti.fillRect(cx + 10, worldHeight - 70 - ch * 0.4 - 12, 6, 12);
+      // Highlight edge
+      cacti.fillStyle(0x336622, 0.3);
+      cacti.fillRect(cx + 2, worldHeight - 70 - ch, 2, ch);
     }
 
     // Dust haze layer
@@ -494,6 +530,12 @@ export class Level4Scene extends Phaser.Scene {
     for (let i = 0; i < 20; i++) {
       dust.fillEllipse(Math.random() * worldWidth, worldHeight - 100 + Math.random() * 60, 80 + Math.random() * 100, 20 + Math.random() * 15);
     }
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-4);
+    groundShadow.fillStyle(0x000000, 0.12);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createCanyonDecor(worldWidth, worldHeight) {
@@ -558,31 +600,9 @@ export class Level4Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0',
-      'boots': 'cat_boots_f0',
-      'cleo': 'cat_cleo_f0',
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna', 'boots': 'Boots', 'cleo': 'Cleo' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
   }
 
   // ---- VINE PUZZLE ----
@@ -669,6 +689,11 @@ export class Level4Scene extends Phaser.Scene {
         this.time.delayedCall(100, () => {
           this.cleoNpc.destroy();
         });
+
+        // Sync companions so Cleo appears as a follower
+        if (this.companionManager) {
+          this.companionManager.syncCompanions();
+        }
 
         this.showQuickMessage("CLEO JOINED THE PARTY!", 0xffdd88);
       }
@@ -842,6 +867,11 @@ export class Level4Scene extends Phaser.Scene {
         enemy.setFlipX(dir === -1);
       }
     });
+
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
 
     // Fall into pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
