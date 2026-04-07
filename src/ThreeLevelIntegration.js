@@ -43,10 +43,8 @@ export function setupThreeLevel(scene, {
   // Build 3D platforms and ground
   renderer.buildPlatforms(scene.platforms, worldWidth, worldHeight, platformKey, groundKey, pitGaps);
 
-  // Build 3D crates
-  if (scene.crates) {
-    renderer.buildCrates(scene.crates, worldHeight);
-  }
+  // Build 3D props that should replace flat Phaser tiles/sprites.
+  registerThreeProps(scene, renderer);
 
   // Store world dimensions for update syncing
   scene._threeWorldWidth = worldWidth;
@@ -93,8 +91,75 @@ export function setupThreeLevel(scene, {
     });
   }
 
-  // Hide ONLY platform tiles and Graphics backgrounds — keep sprites visible
+  // Hide Phaser environment tiles/backgrounds while leaving gameplay sprites/UI visible.
   hidePhaserEnvironment(scene);
+}
+
+function registerThreeProps(scene, renderer) {
+  const platformPalette = renderer.getPlatformPalette();
+
+  renderer.registerPropGroup(scene.crates, {
+    kind: 'prism',
+    front: 0xa96a35,
+    back: 0x6a3d19,
+    top: 0xd5b172,
+    bottom: 0x4e2b12,
+    side: 0x8a5628,
+    depth: 1.08,
+    rise: 0.24,
+    inset: 0.06,
+    zOffset: 0.72,
+  });
+
+  renderer.registerPropGroup(scene.boulders, {
+    kind: 'rock',
+    color: 0x7e7e7e,
+    zOffset: 0.76,
+  });
+
+  renderer.registerPropGroup(scene.vines, {
+    kind: 'prism',
+    front: 0x3d6f2a,
+    back: 0x27451a,
+    top: 0x67b34a,
+    bottom: 0x1e3414,
+    side: 0x2d5220,
+    depth: 0.85,
+    rise: 0.18,
+    inset: 0.05,
+    zOffset: 0.7,
+  });
+
+  renderer.registerPropGroup(scene.hiddenPaths, {
+    kind: 'prism',
+    ...platformPalette,
+    depth: 2.35,
+    rise: 0.46,
+    inset: 0.1,
+    zOffset: 0.12,
+  });
+
+  renderer.registerPropGroup(scene.controlRoomWall, {
+    kind: 'prism',
+    ...platformPalette,
+    depth: 2.35,
+    rise: 0.46,
+    inset: 0.1,
+    zOffset: 0.18,
+  });
+
+  renderer.registerPropGroup(scene.switches, {
+    kind: 'switch',
+    light: 0xff4444,
+    zOffset: 0.84,
+  });
+
+  renderer.registerPropGroup(scene.yarnBalls, {
+    kind: 'ball',
+    color: 0xff5c97,
+    stripeColor: 0xcc2f6a,
+    zOffset: 0.96,
+  });
 }
 
 /**
@@ -102,9 +167,35 @@ export function setupThreeLevel(scene, {
  * Keeps player, companions, enemies, NPCs, and collectibles VISIBLE as animated sprites.
  */
 function hidePhaserEnvironment(scene) {
-  // Three.js canvas is transparent and behind Phaser, so Phaser backgrounds show through.
-  // Keep ALL Phaser elements visible — platforms, crates, backgrounds.
-  // The 2.5D effect comes from depth movement + scale/alpha cues, not 3D rendering.
+  const groupsToHide = [
+    scene.platforms,
+    scene.crates,
+    scene.boulders,
+    scene.vines,
+    scene.hiddenPaths,
+    scene.controlRoomWall,
+    scene.switches,
+    scene.yarnBalls,
+  ].filter(Boolean);
+
+  groupsToHide.forEach(group => {
+    group.children.each(child => {
+      child.__threeHiddenOriginal = true;
+      child.setVisible(false);
+    });
+  });
+
+  scene.children.list.forEach(child => {
+    if (!child) return;
+    const type = child.type || '';
+    const isFlatBackdrop =
+      (type === 'Graphics' || type === 'Image' || type === 'Sprite') &&
+      (child.depth ?? 0) < 0;
+
+    if (isFlatBackdrop) {
+      child.setVisible(false);
+    }
+  });
 }
 
 /**
@@ -126,7 +217,8 @@ export function updateThreeLevel(scene) {
   if (!renderer) return;
 
   const wh = scene._threeWorldHeight || 576;
-  const dt = scene.game.loop.delta / 1000;
+  const deltaMs = scene.game.loop.delta;
+  const dt = deltaMs / 1000;
 
   // ---- Process depth movement (W/S or UP/DOWN arrows) ----
   if (scene.player?.active && scene._depthKeys) {
@@ -209,6 +301,7 @@ export function updateThreeLevel(scene) {
 
   // ---- Update Three.js camera to match Phaser viewport exactly ----
   const cam = scene.cameras.main;
+  renderer.syncTrackedProps(wh, deltaMs);
   renderer.updateCamera(
     cam.scrollX,
     cam.scrollY,

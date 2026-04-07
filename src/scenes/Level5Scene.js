@@ -194,7 +194,7 @@ export class Level5Scene extends Phaser.Scene {
     ];
 
     switchPositions.forEach(pos => {
-      const sw = this.switches.create(pos.x, pos.y, 'switch');
+      const sw = this.switches.create(pos.x, pos.y, 'switch_off');
       sw.setData('activated', false);
       sw.setTint(0xff4444);  // Red = inactive
 
@@ -638,6 +638,7 @@ export class Level5Scene extends Phaser.Scene {
   hitSwitch(sw) {
     if (sw.getData('activated')) return;
     sw.setData('activated', true);
+    sw.setTexture('switch_on');
     sw.setTint(0x44ff44);  // Green = active
     this.switchesHit++;
 
