@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level5Scene extends Phaser.Scene {
   constructor() {
@@ -192,7 +194,7 @@ export class Level5Scene extends Phaser.Scene {
     ];
 
     switchPositions.forEach(pos => {
-      const sw = this.switches.create(pos.x, pos.y, 'switch');
+      const sw = this.switches.create(pos.x, pos.y, 'switch_off');
       sw.setData('activated', false);
       sw.setTint(0xff4444);  // Red = inactive
 
@@ -349,6 +351,20 @@ export class Level5Scene extends Phaser.Scene {
       this.mechSpiders.push(spider);
     });
 
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'factory',
+      worldWidth,
+      worldHeight,
+      platformKey: 'factory_platform',
+      groundKey: 'factory_ground',
+      pitGaps: [
+        { start: 1800, end: 1920 },
+        { start: 3200, end: 3320 },
+        { start: 4400, end: 4520 },
+      ],
+    });
+
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
@@ -364,6 +380,9 @@ export class Level5Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
     this.physics.add.overlap(this.player, this.yarnBalls, this.hitYarnBall, null, this);
+
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
 
     // Conveyor belt overlaps
     this.conveyorZones.forEach(zone => {
@@ -433,65 +452,118 @@ export class Level5Scene extends Phaser.Scene {
 
   // ---- BACKGROUND ----
   createFactoryBackground(worldWidth, worldHeight) {
-    // Dark gray sky with smoke
+    // Dark gray sky with deeper gradient
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x2a2a2a, 0x2a2a2a, 0x3a3a3a, 0x3a3a3a);
+    sky.fillGradientStyle(0x1a1a1a, 0x1a1a1a, 0x3a3a3a, 0x3a3a3a);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Smoke clouds
+    // Smoke clouds with shadow
     const smoke = this.add.graphics();
     smoke.setScrollFactor(0.05);
     smoke.setDepth(-9);
-    smoke.fillStyle(0x555555, 0.4);
     for (let i = 0; i < 15; i++) {
       const cx = Math.random() * worldWidth;
       const cy = 20 + Math.random() * 80;
       const cw = 60 + Math.random() * 80;
       const ch = 20 + Math.random() * 15;
+      // Shadow underneath
+      smoke.fillStyle(0x333333, 0.2);
+      smoke.fillEllipse(cx, cy + 4, cw, ch * 0.5);
+      // Main smoke
+      smoke.fillStyle(0x555555, 0.4);
       smoke.fillEllipse(cx, cy, cw, ch);
       smoke.fillEllipse(cx + cw * 0.3, cy - 5, cw * 0.7, ch * 0.8);
     }
 
-    // Factory silhouettes with chimneys
+    // Very distant factory outlines
+    const farFactories = this.add.graphics();
+    farFactories.setScrollFactor(0.08);
+    farFactories.setDepth(-8.5);
+    farFactories.fillStyle(0x111111, 0.6);
+    for (let i = 0; i < worldWidth / 250; i++) {
+      const fx = i * 250 + Math.random() * 80;
+      const fh = 120 + Math.random() * 100;
+      const fw = 80 + Math.random() * 50;
+      farFactories.fillRect(fx, worldHeight - 60 - fh, fw, fh + 60);
+      farFactories.fillRect(fx + fw * 0.4, worldHeight - 60 - fh - 50, 6, 50);
+    }
+
+    // Factory silhouettes with 2.5D depth
     const factories = this.add.graphics();
     factories.setScrollFactor(0.15);
     factories.setDepth(-8);
-    factories.fillStyle(0x1a1a1a, 0.8);
     for (let i = 0; i < worldWidth / 200; i++) {
       const fx = i * 200 + Math.random() * 60;
       const fh = 100 + Math.random() * 80;
       const fw = 60 + Math.random() * 40;
-      // Building
-      factories.fillRect(fx, worldHeight - 60 - fh, fw, fh);
+      // Building dark face
+      factories.fillStyle(0x141414, 0.8);
+      factories.fillRect(fx, worldHeight - 60 - fh, fw * 0.6, fh);
+      // Building light face
+      factories.fillStyle(0x222222, 0.8);
+      factories.fillRect(fx + fw * 0.6, worldHeight - 60 - fh, fw * 0.4, fh);
+      // Roof top edge highlight
+      factories.fillStyle(0x333333, 0.6);
+      factories.fillRect(fx, worldHeight - 60 - fh, fw, 3);
       // Chimney
+      factories.fillStyle(0x1a1a1a, 0.8);
       factories.fillRect(fx + fw * 0.3, worldHeight - 60 - fh - 40, 8, 40);
       factories.fillRect(fx + fw * 0.7, worldHeight - 60 - fh - 30, 6, 30);
+      // Windows (lit)
+      factories.fillStyle(0x886633, 0.4);
+      for (let w = 0; w < 3; w++) {
+        factories.fillRect(fx + 8 + w * 16, worldHeight - 60 - fh + 20, 6, 8);
+      }
     }
 
-    // Metal walls (mid-ground)
+    // Metal walls (mid-ground) with depth
     const walls = this.add.graphics();
     walls.setScrollFactor(0.3);
     walls.setDepth(-7);
-    walls.fillStyle(0x444455, 0.6);
     for (let i = 0; i < worldWidth / 150; i++) {
       const wx = i * 150 + Math.random() * 40;
-      walls.fillRect(wx, worldHeight - 140, 80 + Math.random() * 40, 100);
+      const ww = 80 + Math.random() * 40;
+      // Dark face
+      walls.fillStyle(0x333344, 0.6);
+      walls.fillRect(wx, worldHeight - 140, ww * 0.6, 100);
+      // Light face
+      walls.fillStyle(0x555566, 0.6);
+      walls.fillRect(wx + ww * 0.6, worldHeight - 140, ww * 0.4, 100);
+      // Top edge
+      walls.fillStyle(0x666677, 0.3);
+      walls.fillRect(wx, worldHeight - 140, ww, 2);
     }
 
-    // Pipes
+    // Pipes with highlight
     const pipes = this.add.graphics();
     pipes.setScrollFactor(0.25);
     pipes.setDepth(-6);
-    pipes.lineStyle(4, 0x666677, 0.5);
     for (let i = 0; i < worldWidth / 300; i++) {
       const px = i * 300 + Math.random() * 100;
       const py = 100 + Math.random() * 150;
+      const endX = px + 100 + Math.random() * 100;
+      const endY = py + 50 + Math.random() * 50;
+      // Shadow
+      pipes.lineStyle(6, 0x333344, 0.2);
+      pipes.beginPath();
+      pipes.moveTo(px, py + 3);
+      pipes.lineTo(endX, py + 3);
+      pipes.lineTo(endX, endY + 3);
+      pipes.strokePath();
+      // Main pipe
+      pipes.lineStyle(4, 0x666677, 0.5);
       pipes.beginPath();
       pipes.moveTo(px, py);
-      pipes.lineTo(px + 100 + Math.random() * 100, py);
-      pipes.lineTo(px + 100 + Math.random() * 100, py + 50 + Math.random() * 50);
+      pipes.lineTo(endX, py);
+      pipes.lineTo(endX, endY);
+      pipes.strokePath();
+      // Highlight
+      pipes.lineStyle(1, 0x888899, 0.3);
+      pipes.beginPath();
+      pipes.moveTo(px, py - 1);
+      pipes.lineTo(endX, py - 1);
       pipes.strokePath();
     }
 
@@ -499,14 +571,17 @@ export class Level5Scene extends Phaser.Scene {
     const gears = this.add.graphics();
     gears.setScrollFactor(0.2);
     gears.setDepth(-5);
-    gears.lineStyle(3, 0x555566, 0.3);
     for (let i = 0; i < 8; i++) {
       const gx = Math.random() * worldWidth;
       const gy = 80 + Math.random() * 200;
       const gr = 15 + Math.random() * 20;
+      // Shadow
+      gears.lineStyle(3, 0x222233, 0.2);
+      gears.strokeCircle(gx + 2, gy + 2, gr);
+      // Main gear
+      gears.lineStyle(3, 0x555566, 0.3);
       gears.strokeCircle(gx, gy, gr);
       gears.strokeCircle(gx, gy, gr * 0.5);
-      // Spokes
       for (let s = 0; s < 6; s++) {
         const angle = (s / 6) * Math.PI * 2;
         gears.beginPath();
@@ -515,6 +590,12 @@ export class Level5Scene extends Phaser.Scene {
         gears.strokePath();
       }
     }
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-4);
+    groundShadow.fillStyle(0x000000, 0.15);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createFactoryDecorations(worldWidth, worldHeight) {
@@ -548,37 +629,16 @@ export class Level5Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0',
-      'boots': 'cat_boots_f0',
-      'cleo': 'cat_cleo_f0'
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna', 'boots': 'Boots', 'cleo': 'Cleo' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
   }
 
   // ---- SWITCH PUZZLE ----
   hitSwitch(sw) {
     if (sw.getData('activated')) return;
     sw.setData('activated', true);
+    sw.setTexture('switch_on');
     sw.setTint(0x44ff44);  // Green = active
     this.switchesHit++;
 
@@ -849,6 +909,14 @@ export class Level5Scene extends Phaser.Scene {
       yarn.angle += yarn.getData('direction') * 3;
     });
 
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
+
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into pit
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -991,6 +1059,7 @@ export class Level5Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

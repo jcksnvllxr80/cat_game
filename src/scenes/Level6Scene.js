@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level6Scene extends Phaser.Scene {
   constructor() {
@@ -311,6 +313,20 @@ export class Level6Scene extends Phaser.Scene {
     // ---- Falling Snowflakes ----
     this.createSnowflakes();
 
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'snow',
+      worldWidth,
+      worldHeight,
+      platformKey: 'snow_platform',
+      groundKey: 'snow_ground',
+      pitGaps: [
+        { start: 1400, end: 1520 },
+        { start: 2800, end: 2920 },
+        { start: 4500, end: 4620 },
+      ],
+    });
+
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
@@ -323,6 +339,9 @@ export class Level6Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.waters, this.collectWater, null, this);
     this.physics.add.overlap(this.player, this.mapPieces, this.collectMapPiece, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
+
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
 
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -384,67 +403,97 @@ export class Level6Scene extends Phaser.Scene {
 
   // ---- BACKGROUND ----
   createSnowBackground(worldWidth, worldHeight) {
-    // Pale blue / white sky
+    // Pale blue / white sky with deeper gradient
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0xc8dce8, 0xc8dce8, 0xe8f0f8, 0xe8f0f8);
+    sky.fillGradientStyle(0xa0c0d8, 0xa0c0d8, 0xe8f0f8, 0xe8f0f8);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Clouds
+    // Clouds with subtle shadow
     const clouds = this.add.graphics();
     clouds.setScrollFactor(0.05);
     clouds.setDepth(-9);
-    clouds.fillStyle(0xffffff, 0.6);
     for (let i = 0; i < 15; i++) {
       const cx = Math.random() * worldWidth;
       const cy = 30 + Math.random() * 80;
       const cw = 60 + Math.random() * 80;
       const ch = 20 + Math.random() * 15;
+      // Cloud shadow
+      clouds.fillStyle(0xbbccdd, 0.3);
+      clouds.fillEllipse(cx, cy + 4, cw, ch * 0.5);
+      // Main cloud
+      clouds.fillStyle(0xffffff, 0.6);
       clouds.fillEllipse(cx, cy, cw, ch);
       clouds.fillEllipse(cx + cw * 0.3, cy - 5, cw * 0.7, ch * 0.8);
       clouds.fillEllipse(cx - cw * 0.2, cy + 3, cw * 0.5, ch * 0.6);
     }
 
-    // Distant snow-capped mountains
+    // Very distant peaks (extra depth layer)
+    const veryFarMountains = this.add.graphics();
+    veryFarMountains.setScrollFactor(0.05);
+    veryFarMountains.setDepth(-8.5);
+    veryFarMountains.fillStyle(0x99aabb, 0.5);
+    for (let i = 0; i < worldWidth / 250; i++) {
+      const mx = i * 250 + Math.random() * 80;
+      const mh = 200 + Math.random() * 150;
+      veryFarMountains.fillTriangle(mx - 100, worldHeight - 60, mx, worldHeight - 60 - mh, mx + 100, worldHeight - 60);
+    }
+
+    // Distant snow-capped mountains with light/shadow sides
     const farMountains = this.add.graphics();
     farMountains.setScrollFactor(0.1);
     farMountains.setDepth(-8);
-    farMountains.fillStyle(0x8899aa, 0.7);
     for (let i = 0; i < worldWidth / 200; i++) {
       const mx = i * 200 + Math.random() * 60;
       const mh = 150 + Math.random() * 120;
-      farMountains.fillTriangle(mx - 80, worldHeight - 60, mx, worldHeight - 60 - mh, mx + 80, worldHeight - 60);
+      // Shadow side (left)
+      farMountains.fillStyle(0x708099, 0.7);
+      farMountains.fillTriangle(mx - 80, worldHeight - 60, mx, worldHeight - 60 - mh, mx, worldHeight - 60);
+      // Light side (right)
+      farMountains.fillStyle(0x99aabb, 0.7);
+      farMountains.fillTriangle(mx, worldHeight - 60, mx, worldHeight - 60 - mh, mx + 80, worldHeight - 60);
       // Snow cap
       farMountains.fillStyle(0xeef4fa, 0.8);
       farMountains.fillTriangle(mx - 25, worldHeight - 60 - mh + 40, mx, worldHeight - 60 - mh, mx + 25, worldHeight - 60 - mh + 40);
-      farMountains.fillStyle(0x8899aa, 0.7);
     }
 
-    // Mid-range peaks
+    // Mid-range peaks with light/shadow
     const midPeaks = this.add.graphics();
     midPeaks.setScrollFactor(0.3);
     midPeaks.setDepth(-7);
-    midPeaks.fillStyle(0x667788, 0.6);
     for (let i = 0; i < worldWidth / 150; i++) {
       const mx = i * 150 + Math.random() * 40;
       const mh = 100 + Math.random() * 80;
-      midPeaks.fillTriangle(mx - 50, worldHeight - 50, mx, worldHeight - 50 - mh, mx + 50, worldHeight - 50);
+      // Shadow side
+      midPeaks.fillStyle(0x556677, 0.6);
+      midPeaks.fillTriangle(mx - 50, worldHeight - 50, mx, worldHeight - 50 - mh, mx, worldHeight - 50);
+      // Light side
+      midPeaks.fillStyle(0x778899, 0.6);
+      midPeaks.fillTriangle(mx, worldHeight - 50, mx, worldHeight - 50 - mh, mx + 50, worldHeight - 50);
       // Snow cap
       midPeaks.fillStyle(0xdde8f0, 0.7);
       midPeaks.fillTriangle(mx - 18, worldHeight - 50 - mh + 30, mx, worldHeight - 50 - mh, mx + 18, worldHeight - 50 - mh + 30);
-      midPeaks.fillStyle(0x667788, 0.6);
     }
 
-    // Pine trees in background
+    // Pine trees with shadows
     const pines = this.add.graphics();
     pines.setScrollFactor(0.2);
     pines.setDepth(-6);
-    pines.fillStyle(0x2a4a3a, 0.5);
     for (let i = 0; i < worldWidth / 70; i++) {
       const tx = i * 70 + Math.random() * 30;
       const th = 40 + Math.random() * 30;
-      pines.fillTriangle(tx - 12, worldHeight - 55, tx, worldHeight - 55 - th, tx + 12, worldHeight - 55);
+      // Shadow at base
+      pines.fillStyle(0x000000, 0.08);
+      pines.fillEllipse(tx, worldHeight - 53, 10, 3);
+      // Tree dark side
+      pines.fillStyle(0x1a3a2a, 0.5);
+      pines.fillTriangle(tx - 12, worldHeight - 55, tx, worldHeight - 55 - th, tx, worldHeight - 55);
+      // Tree light side
+      pines.fillStyle(0x3a5a4a, 0.5);
+      pines.fillTriangle(tx, worldHeight - 55, tx, worldHeight - 55 - th, tx + 12, worldHeight - 55);
+      // Second tier
+      pines.fillStyle(0x2a4a3a, 0.5);
       pines.fillTriangle(tx - 9, worldHeight - 55 - th * 0.3, tx, worldHeight - 55 - th - 15, tx + 9, worldHeight - 55 - th * 0.3);
     }
 
@@ -456,6 +505,12 @@ export class Level6Scene extends Phaser.Scene {
     for (let i = 0; i < 20; i++) {
       mist.fillEllipse(Math.random() * worldWidth, worldHeight - 100 + Math.random() * 60, 80 + Math.random() * 100, 20 + Math.random() * 15);
     }
+
+    // Ground edge shadow (2.5D depth cue)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-5);
+    groundShadow.fillStyle(0x000000, 0.1);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   createSnowDecorations(worldWidth, worldHeight) {
@@ -524,32 +579,9 @@ export class Level6Scene extends Phaser.Scene {
 
   // ---- CHARACTER SWITCHING ----
   switchCharacter() {
-    if (this.playerState.party.length < 2) return;
-
-    const currentIdx = this.playerState.party.indexOf(this.playerState.activeChar);
-    const nextIdx = (currentIdx + 1) % this.playerState.party.length;
-    this.playerState.activeChar = this.playerState.party[nextIdx];
-
-    // Swap sprite texture
-    const sheetMap = {
-      'whiskers': 'cat_whiskers_f0',
-      'luna': 'cat_luna_f0',
-      'boots': 'cat_boots_f0',
-      'cleo': 'cat_cleo_f0',
-      'mochi': 'cat_mochi_f0',
-    };
-    this.player.setTexture(sheetMap[this.playerState.activeChar]);
-
-    // Re-apply physics body size after texture swap (setTexture resets it)
-    this.player.body.setSize(20, 22);
-    this.player.body.setOffset(14, 14);
-
-    // Brief flash effect on switch
-    this.player.setTint(0xaa88ff);
-    this.time.delayedCall(200, () => this.player.clearTint());
-
-    const charNames = { 'whiskers': 'Whiskers', 'luna': 'Luna', 'boots': 'Boots', 'cleo': 'Cleo', 'mochi': 'Mochi' };
-    this.showQuickMessage(`Switched to ${charNames[this.playerState.activeChar]}!`, 0xaa88ff);
+    if (this.companionManager) {
+      this.companionManager.switchCharacter();
+    }
   }
 
   // ---- MOCHI'S BELLY BOUNCE ABILITY ----
@@ -611,6 +643,11 @@ export class Level6Scene extends Phaser.Scene {
         this.time.delayedCall(100, () => {
           this.mochiNpc.destroy();
         });
+
+        // Sync companions so Mochi appears as a follower
+        if (this.companionManager) {
+          this.companionManager.syncCompanions();
+        }
 
         this.showQuickMessage("MOCHI JOINED THE PARTY!", 0xff8800);
       }
@@ -825,6 +862,14 @@ export class Level6Scene extends Phaser.Scene {
       this.time.delayedCall(10000, () => { this._iceWarnShown = false; });
     }
 
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
+
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
+
     // Fall into crevasse
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
       this.player.setData('pitCooldown', true);
@@ -946,6 +991,7 @@ export class Level6Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;

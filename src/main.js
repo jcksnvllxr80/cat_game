@@ -11,12 +11,14 @@ import { Level7Scene } from './scenes/Level7Scene.js';
 import { UIScene } from './scenes/UIScene.js';
 import { DialogScene } from './scenes/DialogScene.js';
 import { PauseScene } from './scenes/PauseScene.js';
+window.__threeRenderer = null;
 
 const config = {
   type: Phaser.AUTO,
   width: 1024,
   height: 576,
-  parent: 'game',
+  parent: 'game-container',
+  transparent: false,
   pixelArt: true,
   physics: {
     default: 'arcade',
@@ -27,7 +29,7 @@ const config = {
   },
   scene: [BootScene, TitleScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, UIScene, DialogScene, PauseScene],
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH
   }
 };

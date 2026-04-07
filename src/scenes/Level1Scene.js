@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { PIT_THRESHOLD } from '../constants.js';
+import { CompanionManager } from '../CompanionManager.js';
+import { setupThreeLevel, updateThreeLevel, checkZProximity } from '../ThreeLevelIntegration.js';
 
 export class Level1Scene extends Phaser.Scene {
   constructor() {
@@ -223,6 +225,19 @@ export class Level1Scene extends Phaser.Scene {
       enemy.setVelocityX(60);
     });
 
+    // ---- 3D Rendering (Three.js) ----
+    setupThreeLevel(this, {
+      biome: 'meadow',
+      worldWidth,
+      worldHeight,
+      platformKey: 'platform',
+      groundKey: 'ground',
+      pitGaps: [
+        { start: 800, end: 900 },
+        { start: 2200, end: 2300 },
+      ],
+    });
+
     // ---- Colliders ----
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.player, this.crates);
@@ -237,6 +252,9 @@ export class Level1Scene extends Phaser.Scene {
 
     // Enemy collision
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
+
+    // ---- Companion System ----
+    this.companionManager = new CompanionManager(this, this.playerState, this.player, this.platforms);
 
     // ---- Controls ----
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -319,25 +337,38 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   createParallaxBackground(worldWidth, worldHeight) {
-    // Sky gradient (static)
+    // Sky gradient (static) — deeper gradient for 2.5D depth
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E0FF, 0xB0E0FF);
+    sky.fillGradientStyle(0x5BA8D9, 0x5BA8D9, 0xC8E6F5, 0xC8E6F5);
     sky.fillRect(0, 0, 1024, worldHeight);
     sky.setScrollFactor(0);
     sky.setDepth(-10);
 
-    // Far mountains (slow scroll)
+    // Far mountains (slow scroll) — with shading for depth
     const mountains = this.add.graphics();
     mountains.setScrollFactor(0.1);
     mountains.setDepth(-9);
-    mountains.fillStyle(0x7B68AE, 0.6);
     for (let i = 0; i < worldWidth / 200; i++) {
       const mx = i * 200 + Math.random() * 50;
       const mh = 100 + Math.random() * 80;
+      // Shadow side
+      mountains.fillStyle(0x6B58A0, 0.6);
       mountains.fillTriangle(mx - 100, worldHeight - 80, mx, worldHeight - 80 - mh, mx + 100, worldHeight - 80);
+      // Lit side highlight
+      mountains.fillStyle(0x8B78BE, 0.3);
+      mountains.fillTriangle(mx - 80, worldHeight - 80, mx, worldHeight - 80 - mh, mx, worldHeight - 80);
     }
 
-    // Mid hills (medium scroll)
+    // Mid hills (medium scroll) — layered for 2.5D
+    const hillsFar = this.add.graphics();
+    hillsFar.setScrollFactor(0.2);
+    hillsFar.setDepth(-8.5);
+    hillsFar.fillStyle(0x4A7A30, 0.5);
+    for (let x = 0; x < worldWidth; x += 3) {
+      const h = Math.sin(x * 0.003) * 40 + Math.sin(x * 0.008) * 20 + 50;
+      hillsFar.fillRect(x, worldHeight - 40 - h, 3, h + 40);
+    }
+
     const hills = this.add.graphics();
     hills.setScrollFactor(0.3);
     hills.setDepth(-8);
@@ -347,28 +378,47 @@ export class Level1Scene extends Phaser.Scene {
       hills.fillRect(x, worldHeight - 50 - h, 3, h + 50);
     }
 
-    // Near bushes (faster scroll)
+    // Near bushes (faster scroll) — with shadow/highlight
     const bushes = this.add.graphics();
     bushes.setScrollFactor(0.6);
     bushes.setDepth(-7);
     for (let i = 0; i < worldWidth / 100; i++) {
       const bx = i * 100 + Math.random() * 40;
+      const bw = 40 + Math.random() * 20;
+      const bh = 20 + Math.random() * 10;
+      // Shadow below
+      bushes.fillStyle(0x1a3a0a, 0.3);
+      bushes.fillEllipse(bx, worldHeight - 52, bw, bh * 0.5);
+      // Bush body
       bushes.fillStyle(0x3D7A1E, 0.5);
-      bushes.fillEllipse(bx, worldHeight - 55, 40 + Math.random() * 20, 20 + Math.random() * 10);
+      bushes.fillEllipse(bx, worldHeight - 55, bw, bh);
+      // Highlight on top
+      bushes.fillStyle(0x5DA03E, 0.3);
+      bushes.fillEllipse(bx - 4, worldHeight - 58, bw * 0.6, bh * 0.5);
     }
 
-    // Decorative clouds
+    // Decorative clouds — with soft shadows
     const clouds = this.add.graphics();
     clouds.setScrollFactor(0.05);
     clouds.setDepth(-9);
-    clouds.fillStyle(0xffffff, 0.7);
     for (let i = 0; i < 15; i++) {
       const cx = Math.random() * worldWidth;
       const cy = 30 + Math.random() * 100;
+      // Cloud shadow
+      clouds.fillStyle(0xaabbcc, 0.2);
+      clouds.fillEllipse(cx + 4, cy + 4, 50 + Math.random() * 40, 20 + Math.random() * 15);
+      // Cloud body
+      clouds.fillStyle(0xffffff, 0.7);
       clouds.fillEllipse(cx, cy, 50 + Math.random() * 40, 20 + Math.random() * 15);
       clouds.fillEllipse(cx + 20, cy - 8, 30, 18);
       clouds.fillEllipse(cx - 15, cy - 5, 25, 16);
     }
+
+    // Ground edge shadow (2.5D depth cue — darkens near platform tops)
+    const groundShadow = this.add.graphics();
+    groundShadow.setDepth(-5);
+    groundShadow.fillStyle(0x000000, 0.1);
+    groundShadow.fillRect(0, worldHeight - 52, worldWidth, 6);
   }
 
   addFloatAnimation(sprite) {
@@ -506,6 +556,14 @@ export class Level1Scene extends Phaser.Scene {
       enemy.setVelocityX(dir * 60);
       enemy.setFlipX(dir === -1);
     });
+
+    // Update companions (follow system)
+    if (this.companionManager) {
+      this.companionManager.update();
+    }
+
+    // Sync & render Three.js 3D scene
+    updateThreeLevel(this);
 
     // Fall into pit = lose a life
     if (this.player.y > PIT_THRESHOLD && !this.player.getData('pitCooldown')) {
@@ -660,6 +718,8 @@ export class Level1Scene extends Phaser.Scene {
 
   hitEnemy(player, enemy) {
     if (enemy.getData('defeated')) return;
+    // 2.5D depth check — ignore collision if not in same Z lane
+    if (!checkZProximity(player, enemy)) return;
     if (this.playerState.isPouncing) {
       this.scareEnemy(enemy);
       return;
